@@ -1,9 +1,71 @@
-import Link from "next/link";
-import { getUser, signOut } from "@/app/actions/auth";
-import { Button } from "@/app/components/Button";
+"use client";
 
-export default async function DashboardPage() {
-  const user = await getUser();
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signOut } from "@/app/actions/auth";
+import { Button } from "@/app/components/Button";
+import { UserTracksStats } from "@/app/components/UserTracksStats";
+import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
+import { createClient } from "@/app/lib/supabase/client";
+
+interface User {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
+export default function DashboardPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const router = useRouter();
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const supabase = await createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          router.push("/auth/login");
+        } else {
+          setUser({
+            id: user.id,
+            email: user.email || "",
+            created_at: user.created_at || "",
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching user:", err);
+        router.push("/auth/login");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getUser();
+  }, [router]);
+
+  const handleTrackDeleted = () => {
+    // Increment refreshKey to reload both UserTracksStats and UserSubmittedTracksList
+    setRefreshKey((prev) => prev + 1);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/auth/login");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -30,7 +92,12 @@ export default async function DashboardPage() {
               ListenExchange
             </h1>
           </Link>
-          <form action={signOut}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSignOut();
+            }}
+          >
             <Button type="submit" variant="secondary" size="sm">
               Sign Out
             </Button>
@@ -53,6 +120,16 @@ export default async function DashboardPage() {
               Your account is secure and ready to use.
             </p>
           </div>
+
+          {/* User Submitted Tracks Stats */}
+          {/* <UserTracksStats key={refreshKey} /> */}
+
+          {/* User Submitted Tracks List */}
+          <UserSubmittedTracksList
+            key={refreshKey}
+            refreshKey={refreshKey}
+            onTrackDeleted={handleTrackDeleted}
+          />
 
           {/* Account Info */}
           <div className="bg-gray-800 rounded-lg p-8 border border-gray-700">

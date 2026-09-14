@@ -6,6 +6,8 @@ import { Button } from "@/app/components/Button";
 import { Input } from "@/app/components/Input";
 import { SpotifyOEmbedResponse } from "@/app/types/spotify";
 import { submitTrack } from "@/app/actions/submit";
+import { UserTracksStats } from "@/app/components/UserTracksStats";
+import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
 
 export default function SubmitPage() {
   const [url, setUrl] = useState("");
@@ -16,6 +18,7 @@ export default function SubmitPage() {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const validateUrl = (urlStr: string): boolean => {
     try {
@@ -86,6 +89,8 @@ export default function SubmitPage() {
         setSuccess(true);
         setUrl("");
         setOembedData(null);
+        // Refresh the UserTracksStats component
+        setRefreshKey((prev) => prev + 1);
         // Clear success message after 3 seconds
         setTimeout(() => setSuccess(false), 3000);
       } else {
@@ -102,6 +107,11 @@ export default function SubmitPage() {
     if (e.key === "Enter") {
       handleFetchOembed();
     }
+  };
+
+  const handleTrackDeleted = () => {
+    // Increment refreshKey to reload both UserTracksStats and UserSubmittedTracksList
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
@@ -137,6 +147,29 @@ export default function SubmitPage() {
               review.
             </p>
           </div>
+
+          {/* User Stats Card */}
+          {/* <UserTracksStats key={refreshKey} /> */}
+
+          {/* User Submitted Tracks List */}
+          <UserSubmittedTracksList
+            key={refreshKey}
+            refreshKey={refreshKey}
+            onTrackDeleted={handleTrackDeleted}
+          />
+
+          {/* Success Tooltip */}
+          {success && (
+            <div className="fixed bottom-6 right-6 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 animate-pulse">
+              <span className="text-xl">✅</span>
+              <div>
+                <p className="font-semibold">Track Submitted!</p>
+                <p className="text-sm text-green-100">
+                  Your track has been added to the discovery queue.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* URL Input Section */}
           <div className="bg-gray-800 rounded-lg p-6 space-y-4">
@@ -185,7 +218,7 @@ export default function SubmitPage() {
                   <img
                     src={oembedData.thumbnail_url}
                     alt={oembedData.title}
-                    className="w-full h-full object-cover"
+                    className="w-[50px] h-[50px] object-cover"
                   />
                 </div>
                 <div>

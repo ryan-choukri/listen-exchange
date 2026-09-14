@@ -25,6 +25,131 @@ function extractSpotifyTrackId(url: string): string | null {
 }
 
 /**
+ * Get all submitted tracks for the current user
+ * @returns Array of submitted tracks with full details
+ */
+export async function getUserSubmittedTracks(): Promise<
+  Array<{
+    id: string;
+    track_id: string;
+    title: string;
+    cover_url: string;
+    created_at: string;
+  }>
+> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("submitted_tracks")
+      .select("id, track_id, title, cover_url, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching user tracks:", error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("Error getting user tracks:", err);
+    return [];
+  }
+}
+
+/**
+ * Delete a submitted track
+ * @param trackId - UUID of the submitted track
+ * @returns Response with success status
+ */
+export async function deleteSubmittedTrack(
+  trackId: string,
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return {
+        success: false,
+        message: "You must be logged in to delete a track",
+      };
+    }
+
+    // Delete the track (RLS will ensure user can only delete their own)
+    const { error } = await supabase
+      .from("submitted_tracks")
+      .delete()
+      .eq("id", trackId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Supabase error:", error);
+      return {
+        success: false,
+        message: "Failed to delete track. Please try again.",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Track deleted successfully",
+    };
+  } catch (err) {
+    console.error("Delete track error:", err);
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "An error occurred",
+    };
+  }
+}
+
+/**
+ * Get count of tracks submitted by the current user
+ * @returns Number of submitted tracks, or 0 if not authenticated
+ */
+export async function getUserSubmittedTracksCount(): Promise<number> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return 0;
+    }
+
+    const { count, error } = await supabase
+      .from("submitted_tracks")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Error fetching user tracks count:", error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (err) {
+    console.error("Error getting tracks count:", err);
+    return 0;
+  }
+}
+
+/**
  * Submit a Spotify track to the platform
  * @param url - Spotify track URL
  * @param title - Track title from oEmbed

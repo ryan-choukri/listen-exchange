@@ -106,11 +106,11 @@ export function TrackCard({
     <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg overflow-hidden">
       {/* Album Cover */}
 
-      <div className="relative w-full bg-gray-200 aspect-square flex items-center justify-center overflow-hidden">
+      <div className="relative w-[100px] bg-gray-200 aspect-square flex items-center justify-center overflow-hidden">
         <img
           src={track.coverUrl}
           alt={track.title}
-          className="w-full h-full object-cover"
+          className="w-[100px] h-[100px] object-cover"
         />
       </div>
 
