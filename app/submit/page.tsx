@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/app/components/Button";
 import { Input } from "@/app/components/Input";
 import { SpotifyOEmbedResponse } from "@/app/types/spotify";
+import { submitTrack } from "@/app/actions/submit";
 
 export default function SubmitPage() {
   const [url, setUrl] = useState("");
@@ -13,6 +14,8 @@ export default function SubmitPage() {
   const [oembedData, setOembedData] = useState<SpotifyOEmbedResponse | null>(
     null,
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const validateUrl = (urlStr: string): boolean => {
     try {
@@ -65,13 +68,33 @@ export default function SubmitPage() {
     }
   };
 
-  const handleAddTrack = () => {
-    if (oembedData) {
-      // For MVP, just show success message
-      // Later: save to database and redirect
-      alert("Track submitted! (MVP version - data not saved yet)");
-      setUrl("");
-      setOembedData(null);
+  const handleAddTrack = async () => {
+    if (!oembedData) return;
+
+    setIsSubmitting(true);
+    setError("");
+    setSuccess(false);
+
+    try {
+      const result = await submitTrack(
+        url,
+        oembedData.title,
+        oembedData.thumbnail_url,
+      );
+
+      if (result.success) {
+        setSuccess(true);
+        setUrl("");
+        setOembedData(null);
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -179,9 +202,31 @@ export default function SubmitPage() {
                 dangerouslySetInnerHTML={{ __html: oembedData.html }}
               />
 
+              {/* Error Message */}
+              {error && (
+                <div className="p-3 bg-red-500/20 border border-red-500 rounded-lg">
+                  <p className="text-red-300 text-sm">{error}</p>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {success && (
+                <div className="p-3 bg-green-500/20 border border-green-500 rounded-lg">
+                  <p className="text-green-300 text-sm font-medium">
+                    ✓ Track submitted successfully! It's now available in
+                    Discovery.
+                  </p>
+                </div>
+              )}
+
               {/* Action Button */}
-              <Button onClick={handleAddTrack} size="md" className="w-full">
-                Add This Track
+              <Button
+                onClick={handleAddTrack}
+                disabled={isSubmitting}
+                size="md"
+                className="w-full"
+              >
+                {isSubmitting ? "Submitting..." : "Add This Track"}
               </Button>
 
               <p className="text-xs text-gray-500 text-center">

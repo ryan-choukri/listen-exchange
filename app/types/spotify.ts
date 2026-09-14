@@ -61,6 +61,16 @@ export interface SubmitFeedbackResponse {
   new_credits: number | null;
 }
 
+// Submitted track (user-submitted content for discovery)
+export interface SubmittedTrack {
+  id: string;
+  user_id: string;
+  track_id: string;
+  title: string;
+  cover_url: string;
+  created_at: string;
+}
+
 // Utility functions to generate Spotify URLs and embeds from trackId
 export function getSpotifyTrackUrl(trackId: string): string {
   return `https://open.spotify.com/track/${trackId}`;
