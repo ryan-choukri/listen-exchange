@@ -248,3 +248,49 @@ export async function submitTrack(
     };
   }
 }
+
+/**
+ * Get all submitted tracks for discovery (excluding user's own tracks)
+ * Users cannot give feedback on tracks they submitted themselves
+ * @returns Array of submitted tracks sorted by newest first, excluding user's own tracks
+ */
+export async function getSubmittedTracks(): Promise<
+  Array<{
+    id: string;
+    track_id: string;
+    title: string;
+    cover_url: string;
+    created_at: string;
+  }>
+> {
+  try {
+    const supabase = await createClient();
+
+    // Get current user to exclude their own tracks
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let query = supabase
+      .from("submitted_tracks")
+      .select("id, track_id, title, cover_url, created_at")
+      .order("created_at", { ascending: false });
+
+    // If user is authenticated, exclude their own tracks
+    if (user) {
+      query = query.neq("user_id", user.id);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching submitted tracks:", error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("Error getting submitted tracks:", err);
+    return [];
+  }
+}

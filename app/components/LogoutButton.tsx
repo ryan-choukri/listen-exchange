@@ -1,0 +1,53 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { signOut } from "@/app/actions/auth";
+import { Button } from "@/app/components/Button";
+import { useState } from "react";
+
+interface LogoutButtonProps {
+  variant?: "primary" | "secondary";
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}
+
+export function LogoutButton({
+  variant = "secondary",
+  size = "sm",
+  className,
+}: LogoutButtonProps) {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoading(true);
+    try {
+      await signOut();
+      // signOut redirects, but we add this as a safety fallback
+      router.push("/auth/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if there's an error, redirect the user
+      router.push("/auth/login");
+    }
+  };
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleLogout();
+      }}
+    >
+      <Button
+        type="submit"
+        variant={variant}
+        size={size}
+        className={className}
+        disabled={isLoading}
+      >
+        {isLoading ? "Signing out..." : "Sign Out"}
+      </Button>
+    </form>
+  );
+}

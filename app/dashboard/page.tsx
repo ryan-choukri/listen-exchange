@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOut } from "@/app/actions/auth";
 import { Button } from "@/app/components/Button";
+import { LogoutButton } from "@/app/components/LogoutButton";
 import { UserTracksStats } from "@/app/components/UserTracksStats";
 import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
 import { createClient } from "@/app/lib/supabase/client";
@@ -54,11 +54,6 @@ export default function DashboardPage() {
     setRefreshKey((prev) => prev + 1);
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push("/auth/login");
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white flex items-center justify-center">
@@ -92,16 +87,24 @@ export default function DashboardPage() {
               ListenExchange
             </h1>
           </Link>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSignOut();
-            }}
-          >
-            <Button type="submit" variant="secondary" size="sm">
-              Sign Out
-            </Button>
-          </form>
+          <div className="flex items-center gap-6">
+            <nav className="flex gap-4">
+              <Link
+                href="/discover"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                Discover
+              </Link>
+              <Link
+                href="/submit"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                Submit
+              </Link>
+            </nav>
+            {/* Sign Out Button */}
+            <LogoutButton size="sm" />
+          </div>
         </div>
       </div>
 

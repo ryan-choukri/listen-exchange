@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/app/components/Button";
 import { Input } from "@/app/components/Input";
+import { LogoutButton } from "@/app/components/LogoutButton";
 import { SpotifyOEmbedResponse } from "@/app/types/spotify";
 import { submitTrack } from "@/app/actions/submit";
 import { UserTracksStats } from "@/app/components/UserTracksStats";
@@ -122,17 +123,27 @@ export default function SubmitPage() {
           <Link href="/" className="text-3xl font-bold hover:opacity-80">
             ListenExchange
           </Link>
-          <nav className="flex gap-4">
-            <Link
-              href="/discover"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              Discover
-            </Link>
-            <Link href="/submit" className="text-green-400 font-semibold">
-              Submit
-            </Link>
-          </nav>
+          <div className="flex items-center gap-6">
+            <nav className="flex gap-4">
+              <Link
+                href="/discover"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                Discover
+              </Link>
+              <Link href="/submit" className="text-green-400 font-semibold">
+                Submit
+              </Link>
+              <Link
+                href="/dashboard"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                Dashboard
+              </Link>
+            </nav>
+            {/* Sign Out Button */}
+            <LogoutButton size="sm" />
+          </div>
         </div>
       </div>
 

@@ -4,42 +4,22 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/app/components/Button";
 import { TrackCard } from "@/app/components/TrackCard";
+import { LogoutButton } from "@/app/components/LogoutButton";
 import { Track, UserProfile, TrackFeedback } from "@/app/types/spotify";
 import {
   submitTrackFeedback,
   getUserProfile,
   getUserFeedbacks,
 } from "@/app/actions/feedback";
-
-// Mock data for MVP - Store only track IDs, reconstruct everything else dynamically
-const MOCK_TRACKS: Track[] = [
-  {
-    id: "1",
-    title: "Blinding Lights - The Weeknd",
-    coverUrl:
-      "https://i.scdn.co/image/ab67616d0000b273bbd45c8d36e0e045ef640411",
-    trackId: "2lTm559tuIvatlT1u0JYG2",
-  },
-  {
-    id: "2",
-    title: "As It Was - Harry Styles",
-    coverUrl:
-      "https://i.scdn.co/image/ab67616d0000b273bbd45c8d36e0e045ef640411",
-    trackId: "30FURVTCpbKyykjSEQzGkH",
-  },
-  {
-    id: "3",
-    title: "Heat Waves - Glass Animals",
-    coverUrl:
-      "https://i.scdn.co/image/ab67616d0000b273bbd45c8d36e0e045ef640411",
-    trackId: "6amDI9Dbi93HDAAYiIARjL",
-  },
-];
+import { getSubmittedTracks } from "@/app/actions/submit";
 
 export default function DiscoverPage() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [feedbacks, setFeedbacks] = useState<TrackFeedback[]>([]);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [isLoadingTracks, setIsLoadingTracks] = useState(true);
+  const [tracksError, setTracksError] = useState<string | null>(null);
 
   // Load user profile and feedbacks on mount
   useEffect(() => {
@@ -62,7 +42,40 @@ export default function DiscoverPage() {
     loadUserData();
   }, []);
 
-  const currentTrack = MOCK_TRACKS[currentTrackIndex];
+  // Load submitted tracks from Supabase
+  useEffect(() => {
+    const loadTracks = async () => {
+      try {
+        setIsLoadingTracks(true);
+        setTracksError(null);
+        const submittedTracks = await getSubmittedTracks();
+
+        if (submittedTracks.length === 0) {
+          setTracks([]);
+          setTracksError(null);
+        } else {
+          // Convert Supabase format to Track format
+          const convertedTracks: Track[] = submittedTracks.map((track) => ({
+            id: track.id,
+            title: track.title,
+            coverUrl: track.cover_url,
+            trackId: track.track_id,
+          }));
+          setTracks(convertedTracks);
+        }
+      } catch (err) {
+        console.error("Error loading tracks:", err);
+        setTracksError("Failed to load tracks. Please refresh the page.");
+        setTracks([]);
+      } finally {
+        setIsLoadingTracks(false);
+      }
+    };
+
+    loadTracks();
+  }, []);
+
+  const currentTrack = tracks[currentTrackIndex];
 
   const handleFeedbackSubmit = async (feedback: string) => {
     try {
@@ -121,6 +134,12 @@ export default function DiscoverPage() {
               >
                 Submit
               </Link>
+              <Link
+                href="/dashboard"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                Dashboard
+              </Link>
             </nav>
             {/* Credits Counter */}
             <div className="bg-green-500/20 border border-green-500/50 rounded-full px-4 py-2">
@@ -128,115 +147,151 @@ export default function DiscoverPage() {
                 🌟 {profile?.credits ?? 0} credits
               </p>
             </div>
+            {/* Sign Out Button */}
+            <LogoutButton size="sm" />
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="space-y-8">
-          {/* Progress */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Discover & Listen</h1>
-              <p className="text-gray-400 mt-2">
-                Track {currentTrackIndex + 1} of {MOCK_TRACKS.length}
-              </p>
+        {/* Error State */}
+        {tracksError && (
+          <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+            <p className="text-red-400 text-sm">{tracksError}</p>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoadingTracks ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mb-4"></div>
+              <p className="text-gray-400">Loading tracks...</p>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-400">Feedbacks submitted</p>
-              <p className="text-2xl font-bold">{feedbacks.length}</p>
-            </div>
           </div>
-
-          {/* Progress Bar */}
-          <div className="w-full bg-gray-700 rounded-full h-1 overflow-hidden">
-            <div
-              className="h-full bg-green-500 transition-all duration-300"
-              style={{
-                width: `${((currentTrackIndex + 1) / MOCK_TRACKS.length) * 100}%`,
-              }}
-            />
+        ) : tracks.length === 0 ? (
+          // Empty State
+          <div className="text-center py-12">
+            <p className="text-gray-400 text-lg mb-4">
+              No tracks available yet
+            </p>
+            <p className="text-gray-500 mb-6">
+              Be the first to{" "}
+              <Link
+                href="/submit"
+                className="text-green-400 hover:text-green-300"
+              >
+                submit a track
+              </Link>
+              !
+            </p>
           </div>
-
-          {/* Track Card */}
-          <div className="flex justify-center">
-            <TrackCard
-              track={currentTrack}
-              onFeedbackSubmit={handleFeedbackSubmit}
-            />
-          </div>
-
-          {/* Navigation */}
-          <div className="flex gap-3 justify-center">
-            <Button
-              onClick={() =>
-                setCurrentTrackIndex(Math.max(0, currentTrackIndex - 1))
-              }
-              disabled={currentTrackIndex === 0}
-              variant="secondary"
-            >
-              ← Previous
-            </Button>
-            <Button
-              onClick={() =>
-                setCurrentTrackIndex(
-                  Math.min(MOCK_TRACKS.length - 1, currentTrackIndex + 1),
-                )
-              }
-              disabled={currentTrackIndex === MOCK_TRACKS.length - 1}
-              variant="secondary"
-            >
-              Next →
-            </Button>
-          </div>
-
-          {/* Feedback History */}
-          {feedbacks.length > 0 && (
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h2 className="text-lg font-semibold mb-4">
-                Your Feedback History ({feedbacks.length})
-              </h2>
-              <div className="space-y-3 max-h-48 overflow-y-auto">
-                {feedbacks.map((item, idx) => {
-                  const track = MOCK_TRACKS.find(
-                    (t) => t.trackId === item.track_id,
-                  );
-                  return (
-                    <div
-                      key={idx}
-                      className="bg-gray-700 rounded p-3 text-sm border-l-2 border-green-500"
-                    >
-                      <p className="font-medium text-gray-100">
-                        {track?.title || item.track_id}
-                      </p>
-                      <p className="text-gray-300 mt-1 line-clamp-2">
-                        {item.feedback}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        ✓ +1 credit earned •{" "}
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  );
-                })}
+        ) : (
+          <div className="space-y-8">
+            {/* Progress */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold">Discover & Listen</h1>
+                <p className="text-gray-400 mt-2">
+                  Track {currentTrackIndex + 1} of {tracks.length}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-400">Feedbacks submitted</p>
+                <p className="text-2xl font-bold">{feedbacks.length}</p>
               </div>
             </div>
-          )}
 
-          {/* Info Box */}
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 space-y-2">
-            <p className="text-sm text-blue-300">
-              <span className="font-semibold">ℹ️ How it works:</span>
-            </p>
-            <ol className="text-sm text-blue-300/80 space-y-1 ml-4 list-decimal">
-              <li>Listen to the track for 10 seconds of real play time</li>
-              <li>Share honest feedback (minimum 10 characters)</li>
-              <li>Earn 1 credit per submission</li>
-              <li>Use credits to submit your own tracks</li>
-            </ol>
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-700 rounded-full h-1 overflow-hidden">
+              <div
+                className="h-full bg-green-500 transition-all duration-300"
+                style={{
+                  width: `${((currentTrackIndex + 1) / tracks.length) * 100}%`,
+                }}
+              />
+            </div>
+
+            {/* Track Card */}
+            <div className="flex justify-center">
+              <TrackCard
+                track={currentTrack}
+                onFeedbackSubmit={handleFeedbackSubmit}
+              />
+            </div>
+
+            {/* Navigation */}
+            <div className="flex gap-3 justify-center">
+              <Button
+                onClick={() =>
+                  setCurrentTrackIndex(Math.max(0, currentTrackIndex - 1))
+                }
+                disabled={currentTrackIndex === 0}
+                variant="secondary"
+              >
+                ← Previous
+              </Button>
+              <Button
+                onClick={() =>
+                  setCurrentTrackIndex(
+                    Math.min(tracks.length - 1, currentTrackIndex + 1),
+                  )
+                }
+                disabled={currentTrackIndex === tracks.length - 1}
+                variant="secondary"
+              >
+                Next →
+              </Button>
+            </div>
+
+            {/* Feedback History */}
+            {feedbacks.length > 0 && (
+              <div className="bg-gray-800 rounded-lg p-6">
+                <h2 className="text-lg font-semibold mb-4">
+                  Your Feedback History ({feedbacks.length})
+                </h2>
+                <div className="space-y-3 max-h-48 overflow-y-auto">
+                  {feedbacks.map((item, idx) => {
+                    const track = tracks.find(
+                      (t) => t.trackId === item.track_id,
+                    );
+                    return (
+                      <div
+                        key={idx}
+                        className="bg-gray-700 rounded p-3 text-sm border-l-2 border-green-500"
+                      >
+                        <p className="font-medium text-gray-100">
+                          {track?.title || item.track_id}
+                        </p>
+                        <p className="text-gray-300 mt-1 line-clamp-2">
+                          {item.feedback}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          ✓ +1 credit earned •{" "}
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Info Box */}
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 space-y-2">
+              <p className="text-sm text-blue-300">
+                <span className="font-semibold">ℹ️ How it works:</span>
+              </p>
+              <ol className="text-sm text-blue-300/80 space-y-1 ml-4 list-decimal">
+                <li>Listen to the track for 10 seconds of real play time</li>
+                <li>Share honest feedback (minimum 10 characters)</li>
+                <li>Earn 1 credit per submission</li>
+                <li>Use credits to submit your own tracks</li>
+              </ol>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
