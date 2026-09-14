@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { Button } from "./components/Button";
+import { UserMenu } from "./components/UserMenu";
+import { getUser } from "./actions/auth";
 
-export default function Home() {
+export default async function Home() {
+  const user = await getUser();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
       {/* Header/Navigation */}
       <div className="border-b border-gray-700">
-        <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold">ListenExchange</h1>
+          <UserMenu user={user} />
         </div>
       </div>
 
