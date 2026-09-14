@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/Button";
-import { LogoutButton } from "@/app/components/LogoutButton";
-import { UserTracksStats } from "@/app/components/UserTracksStats";
+import { Navbar } from "@/app/components/Navbar";
 import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
 import { createClient } from "@/app/lib/supabase/client";
 
@@ -79,34 +78,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
-      {/* Header */}
-      <div className="border-b border-gray-700">
-        <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
-          <Link href="/">
-            <h1 className="text-3xl font-bold cursor-pointer hover:text-green-400 transition-colors">
-              ListenExchange
-            </h1>
-          </Link>
-          <div className="flex items-center gap-6">
-            <nav className="flex gap-4">
-              <Link
-                href="/discover"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                Discover
-              </Link>
-              <Link
-                href="/submit"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                Submit
-              </Link>
-            </nav>
-            {/* Sign Out Button */}
-            <LogoutButton size="sm" />
-          </div>
-        </div>
-      </div>
+      {/* Navbar */}
+      <Navbar />
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-12">

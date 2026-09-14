@@ -4,42 +4,32 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/app/components/Button";
 import { TrackCard } from "@/app/components/TrackCard";
-import { LogoutButton } from "@/app/components/LogoutButton";
-import { Track, UserProfile, TrackFeedback } from "@/app/types/spotify";
-import {
-  submitTrackFeedback,
-  getUserProfile,
-  getUserFeedbacks,
-} from "@/app/actions/feedback";
+import { Navbar } from "@/app/components/Navbar";
+import { Track, TrackFeedback } from "@/app/types/spotify";
+import { submitTrackFeedback, getUserFeedbacks } from "@/app/actions/feedback";
 import { getSubmittedTracks } from "@/app/actions/submit";
 
 export default function DiscoverPage() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [feedbacks, setFeedbacks] = useState<TrackFeedback[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoadingTracks, setIsLoadingTracks] = useState(true);
   const [tracksError, setTracksError] = useState<string | null>(null);
 
-  // Load user profile and feedbacks on mount
+  // Load feedbacks on mount
   useEffect(() => {
-    const loadUserData = async () => {
+    const loadFeedbacks = async () => {
       try {
-        const [userProfile, userFeedbacks] = await Promise.all([
-          getUserProfile(),
-          getUserFeedbacks(),
-        ]);
-        setProfile(userProfile);
+        const userFeedbacks = await getUserFeedbacks();
         setFeedbacks(userFeedbacks || []);
       } catch (err) {
         // Database not ready - silently fail and continue
-        console.error("Error loading user data:", err);
-        setProfile(null);
+        console.error("Error loading user feedbacks:", err);
         setFeedbacks([]);
       }
     };
 
-    loadUserData();
+    loadFeedbacks();
   }, []);
 
   // Load submitted tracks from Supabase
@@ -82,13 +72,6 @@ export default function DiscoverPage() {
       const result = await submitTrackFeedback(currentTrack.trackId, feedback);
 
       if (result.success) {
-        // Update profile with new credits
-        if (result.new_credits !== null && result.new_credits !== undefined) {
-          setProfile((prev) =>
-            prev ? { ...prev, credits: result.new_credits as number } : null,
-          );
-        }
-
         // Refresh feedbacks
         try {
           const updatedFeedbacks = await getUserFeedbacks();
@@ -117,41 +100,8 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
-      {/* Header */}
-      <div className="border-b border-gray-700 sticky top-0 z-10 bg-gray-900/95 backdrop-blur">
-        <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
-          <Link href="/" className="text-3xl font-bold hover:opacity-80">
-            ListenExchange
-          </Link>
-          <div className="flex items-center gap-6">
-            <nav className="flex gap-4">
-              <Link href="/discover" className="text-green-400 font-semibold">
-                Discover
-              </Link>
-              <Link
-                href="/submit"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                Submit
-              </Link>
-              <Link
-                href="/dashboard"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                Dashboard
-              </Link>
-            </nav>
-            {/* Credits Counter */}
-            <div className="bg-green-500/20 border border-green-500/50 rounded-full px-4 py-2">
-              <p className="text-sm font-medium">
-                🌟 {profile?.credits ?? 0} credits
-              </p>
-            </div>
-            {/* Sign Out Button */}
-            <LogoutButton size="sm" />
-          </div>
-        </div>
-      </div>
+      {/* Navbar */}
+      <Navbar />
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-12">

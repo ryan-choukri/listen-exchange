@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/app/components/Button";
 import { Input } from "@/app/components/Input";
-import { LogoutButton } from "@/app/components/LogoutButton";
+import { Navbar } from "@/app/components/Navbar";
 import { SpotifyOEmbedResponse } from "@/app/types/spotify";
 import { submitTrack } from "@/app/actions/submit";
-import { UserTracksStats } from "@/app/components/UserTracksStats";
 import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
 
 export default function SubmitPage() {
@@ -117,35 +115,8 @@ export default function SubmitPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
-      {/* Header */}
-      <div className="border-b border-gray-700">
-        <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
-          <Link href="/" className="text-3xl font-bold hover:opacity-80">
-            ListenExchange
-          </Link>
-          <div className="flex items-center gap-6">
-            <nav className="flex gap-4">
-              <Link
-                href="/discover"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                Discover
-              </Link>
-              <Link href="/submit" className="text-green-400 font-semibold">
-                Submit
-              </Link>
-              <Link
-                href="/dashboard"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                Dashboard
-              </Link>
-            </nav>
-            {/* Sign Out Button */}
-            <LogoutButton size="sm" />
-          </div>
-        </div>
-      </div>
+      {/* Navbar */}
+      <Navbar />
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 py-12">
