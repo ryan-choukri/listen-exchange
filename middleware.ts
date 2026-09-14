@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
     !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
   ) {
     console.warn(
-      "Missing Supabase credentials in middleware - skipping auth check"
+      "Missing Supabase credentials in middleware - skipping auth check",
     );
     return NextResponse.next({ request });
   }
@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
             });
           },
         },
-      }
+      },
     );
 
     const {
@@ -69,4 +69,3 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ["/dashboard/:path*", "/auth/:path*", "/"],
 };
-
