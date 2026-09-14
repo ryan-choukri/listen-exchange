@@ -36,6 +36,31 @@ export interface ListeningState {
   hasReached60Seconds: boolean;
 }
 
+// User profile with credits
+export interface UserProfile {
+  id: string;
+  credits: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Track feedback
+export interface TrackFeedback {
+  id: string;
+  user_id: string;
+  track_id: string;
+  feedback: string;
+  created_at: string;
+}
+
+// Response from submit_track_feedback RPC
+export interface SubmitFeedbackResponse {
+  success: boolean;
+  feedback_id: string | null;
+  message: string;
+  new_credits: number | null;
+}
+
 // Utility functions to generate Spotify URLs and embeds from trackId
 export function getSpotifyTrackUrl(trackId: string): string {
   return `https://open.spotify.com/track/${trackId}`;

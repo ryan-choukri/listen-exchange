@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/app/components/Button";
 import { TrackCard } from "@/app/components/TrackCard";
-import { Track } from "@/app/types/spotify";
+import { Track, UserProfile, TrackFeedback } from "@/app/types/spotify";
+import {
+  submitTrackFeedback,
+  getUserProfile,
+  getUserFeedbacks,
+} from "@/app/actions/feedback";
 
 // Mock data for MVP - Store only track IDs, reconstruct everything else dynamically
 const MOCK_TRACKS: Track[] = [
@@ -33,40 +38,68 @@ const MOCK_TRACKS: Track[] = [
 
 export default function DiscoverPage() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [feedbackHistory, setFeedbackHistory] = useState<
-    Array<{ trackId: string; feedback: string }>
-  >([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [feedbacks, setFeedbacks] = useState<TrackFeedback[]>([]);
+
+  // Load user profile and feedbacks on mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const [userProfile, userFeedbacks] = await Promise.all([
+          getUserProfile(),
+          getUserFeedbacks(),
+        ]);
+        setProfile(userProfile);
+        setFeedbacks(userFeedbacks || []);
+      } catch (err) {
+        // Database not ready - silently fail and continue
+        console.error("Error loading user data:", err);
+        setProfile(null);
+        setFeedbacks([]);
+      }
+    };
+
+    loadUserData();
+  }, []);
 
   const currentTrack = MOCK_TRACKS[currentTrackIndex];
 
   const handleFeedbackSubmit = async (feedback: string) => {
-    setIsSubmitting(true);
+    try {
+      const result = await submitTrackFeedback(currentTrack.trackId, feedback);
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+      if (result.success) {
+        // Update profile with new credits
+        if (result.new_credits !== null && result.new_credits !== undefined) {
+          setProfile((prev) =>
+            prev ? { ...prev, credits: result.new_credits as number } : null,
+          );
+        }
 
-    // Save feedback (in-memory for MVP)
-    setFeedbackHistory([
-      ...feedbackHistory,
-      {
-        trackId: currentTrack.id,
-        feedback,
-      },
-    ]);
+        // Refresh feedbacks
+        try {
+          const updatedFeedbacks = await getUserFeedbacks();
+          setFeedbacks(updatedFeedbacks || []);
+        } catch (err) {
+          console.error("Error refreshing feedbacks:", err);
+        }
 
-    // Move to next track
-    if (currentTrackIndex < MOCK_TRACKS.length - 1) {
-      setCurrentTrackIndex(currentTrackIndex + 1);
-    } else {
-      alert(
-        `Great! You've listened to all ${MOCK_TRACKS.length} tracks and submitted ${feedbackHistory.length + 1} feedbacks. You earned ${feedbackHistory.length + 1} credits!`,
-      );
-      setCurrentTrackIndex(0);
-      setFeedbackHistory([]);
+        return {
+          success: true,
+          newCredits: result.new_credits || 0,
+        };
+      } else {
+        return {
+          success: false,
+          error: result.message,
+        };
+      }
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      };
     }
-
-    setIsSubmitting(false);
   };
 
   return (
@@ -92,7 +125,7 @@ export default function DiscoverPage() {
             {/* Credits Counter */}
             <div className="bg-green-500/20 border border-green-500/50 rounded-full px-4 py-2">
               <p className="text-sm font-medium">
-                🌟 {feedbackHistory.length} credits
+                🌟 {profile?.credits ?? 0} credits
               </p>
             </div>
           </div>
@@ -112,7 +145,7 @@ export default function DiscoverPage() {
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-400">Feedbacks submitted</p>
-              <p className="text-2xl font-bold">{feedbackHistory.length}</p>
+              <p className="text-2xl font-bold">{feedbacks.length}</p>
             </div>
           </div>
 
@@ -131,7 +164,6 @@ export default function DiscoverPage() {
             <TrackCard
               track={currentTrack}
               onFeedbackSubmit={handleFeedbackSubmit}
-              isSubmitting={isSubmitting}
             />
           </div>
 
@@ -160,27 +192,30 @@ export default function DiscoverPage() {
           </div>
 
           {/* Feedback History */}
-          {feedbackHistory.length > 0 && (
+          {feedbacks.length > 0 && (
             <div className="bg-gray-800 rounded-lg p-6">
               <h2 className="text-lg font-semibold mb-4">
-                Your Feedback History ({feedbackHistory.length})
+                Your Feedback History ({feedbacks.length})
               </h2>
               <div className="space-y-3 max-h-48 overflow-y-auto">
-                {feedbackHistory.map((item, idx) => {
-                  const track = MOCK_TRACKS.find((t) => t.id === item.trackId);
+                {feedbacks.map((item, idx) => {
+                  const track = MOCK_TRACKS.find(
+                    (t) => t.trackId === item.track_id,
+                  );
                   return (
                     <div
                       key={idx}
                       className="bg-gray-700 rounded p-3 text-sm border-l-2 border-green-500"
                     >
                       <p className="font-medium text-gray-100">
-                        {track?.title}
+                        {track?.title || item.track_id}
                       </p>
                       <p className="text-gray-300 mt-1 line-clamp-2">
                         {item.feedback}
                       </p>
                       <p className="text-xs text-gray-500 mt-2">
-                        ✓ +1 credit earned
+                        ✓ +1 credit earned •{" "}
+                        {new Date(item.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   );
@@ -195,8 +230,8 @@ export default function DiscoverPage() {
               <span className="font-semibold">ℹ️ How it works:</span>
             </p>
             <ol className="text-sm text-blue-300/80 space-y-1 ml-4 list-decimal">
-              <li>Listen to the track for 60 seconds of real play time</li>
-              <li>Share honest feedback (minimum 120 characters)</li>
+              <li>Listen to the track for 10 seconds of real play time</li>
+              <li>Share honest feedback (minimum 10 characters)</li>
               <li>Earn 1 credit per submission</li>
               <li>Use credits to submit your own tracks</li>
             </ol>
