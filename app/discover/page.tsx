@@ -50,6 +50,8 @@ export default function DiscoverPage() {
             title: track.title,
             coverUrl: track.cover_url,
             trackId: track.track_id,
+            creditsRemaining: track.credits_remaining,
+            status: track.status,
           }));
           setTracks(convertedTracks);
         }

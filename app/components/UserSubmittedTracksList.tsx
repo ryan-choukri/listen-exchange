@@ -5,7 +5,7 @@ import {
   getUserSubmittedTracks,
   deleteSubmittedTrack,
 } from "@/app/actions/submit";
-import { Button } from "./Button";
+import { CreditAllocationModal } from "./CreditAllocationModal";
 
 interface SubmittedTrack {
   id: string;
@@ -13,6 +13,8 @@ interface SubmittedTrack {
   title: string;
   cover_url: string;
   created_at: string;
+  credits_remaining: number;
+  status: string;
 }
 
 interface UserSubmittedTracksListProps {
@@ -28,6 +30,10 @@ export function UserSubmittedTracksList({
   const [isLoading, setIsLoading] = useState(true);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedTrack, setSelectedTrack] = useState<SubmittedTrack | null>(
+    null,
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const loadTracks = async () => {
@@ -64,6 +70,25 @@ export function UserSubmittedTracksList({
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleAllocateClick = (track: SubmittedTrack) => {
+    setSelectedTrack(track);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedTrack(null);
+  };
+
+  const handleAllocationSuccess = () => {
+    // Refresh tracks
+    const loadTracks = async () => {
+      const userTracks = await getUserSubmittedTracks();
+      setTracks(userTracks);
+    };
+    loadTracks();
   };
 
   if (isLoading) {
@@ -106,36 +131,79 @@ export function UserSubmittedTracksList({
         {tracks.map((track) => (
           <div
             key={track.id}
-            className="px-6 py-4 flex items-center gap-4 hover:bg-gray-700/30 transition-colors"
+            className="px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:bg-gray-700/30 transition-colors"
           >
-            {/* Cover Image */}
-            <div className="flex-shrink-0">
-              <img
-                src={track.cover_url}
-                alt={track.title}
-                className="w-12 h-12 rounded object-cover"
-              />
+            {/* Top Row: Cover + Info */}
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              {/* Cover Image */}
+              <div className="flex-shrink-0">
+                <img
+                  src={track.cover_url}
+                  alt={track.title}
+                  className="w-12 h-12 rounded object-cover"
+                />
+              </div>
+
+              {/* Track Info */}
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-medium truncate">{track.title}</p>
+                <p className="text-gray-400 text-sm">
+                  {new Date(track.created_at).toLocaleDateString()}
+                </p>
+              </div>
             </div>
 
-            {/* Track Info */}
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-medium truncate">{track.title}</p>
-              <p className="text-gray-400 text-sm">
-                {new Date(track.created_at).toLocaleDateString()}
-              </p>
-            </div>
+            {/* Credits and Status Badge */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Status Badge */}
+              {track.status === "active" ? (
+                <span className="px-2 py-1 bg-green-500/20 border border-green-500 rounded text-green-300 text-xs font-medium">
+                  Active
+                </span>
+              ) : (
+                <span className="px-2 py-1 bg-gray-500/20 border border-gray-500 rounded text-gray-300 text-xs font-medium">
+                  Pending
+                </span>
+              )}
 
-            {/* Delete Button */}
-            <button
-              onClick={() => handleDelete(track.id, track.title)}
-              disabled={deletingId === track.id}
-              className="flex-shrink-0 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded text-red-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {deletingId === track.id ? "Deleting..." : "Delete"}
-            </button>
+              {/* Credits Display */}
+              <span className="px-3 py-1 bg-blue-500/20 border border-blue-500 rounded text-blue-300 text-xs font-medium whitespace-nowrap">
+                {track.credits_remaining} credits
+              </span>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleAllocateClick(track)}
+                  className="px-3 py-2 bg-green-600 hover:bg-green-700 border border-green-600 rounded text-white text-sm font-medium transition-colors"
+                >
+                  Allocate
+                </button>
+                <button
+                  onClick={() => handleDelete(track.id, track.title)}
+                  disabled={deletingId === track.id}
+                  className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded text-red-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deletingId === track.id ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
           </div>
         ))}
       </div>
+
+      {/* Credit Allocation Modal */}
+      {selectedTrack && (
+        <CreditAllocationModal
+          trackId={selectedTrack.id}
+          trackTitle={selectedTrack.title}
+          currentCredits={selectedTrack.credits_remaining}
+          currentStatus={selectedTrack.status}
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          onSuccess={handleAllocationSuccess}
+        />
+      )}
     </div>
   );
 }

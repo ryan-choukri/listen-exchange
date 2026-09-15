@@ -18,6 +18,8 @@ export interface Track {
   title: string;
   coverUrl: string;
   trackId: string; // Spotify track ID - used to reconstruct URLs dynamically
+  creditsRemaining?: number; // Number of credits still available for this track
+  status?: string; // 'active' or 'pending'
 }
 
 // Spotify iFrame API events

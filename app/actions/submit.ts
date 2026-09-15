@@ -26,7 +26,7 @@ function extractSpotifyTrackId(url: string): string | null {
 
 /**
  * Get all submitted tracks for the current user
- * @returns Array of submitted tracks with full details
+ * @returns Array of submitted tracks with full details including credits
  */
 export async function getUserSubmittedTracks(): Promise<
   Array<{
@@ -35,6 +35,8 @@ export async function getUserSubmittedTracks(): Promise<
     title: string;
     cover_url: string;
     created_at: string;
+    credits_remaining: number;
+    status: string;
   }>
 > {
   try {
@@ -50,7 +52,9 @@ export async function getUserSubmittedTracks(): Promise<
 
     const { data, error } = await supabase
       .from("submitted_tracks")
-      .select("id, track_id, title, cover_url, created_at")
+      .select(
+        "id, track_id, title, cover_url, created_at, credits_remaining, status",
+      )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -261,6 +265,8 @@ export async function getSubmittedTracks(): Promise<
     title: string;
     cover_url: string;
     created_at: string;
+    credits_remaining: number;
+    status: string;
   }>
 > {
   try {
@@ -273,7 +279,11 @@ export async function getSubmittedTracks(): Promise<
 
     let query = supabase
       .from("submitted_tracks")
-      .select("id, track_id, title, cover_url, created_at")
+      .select(
+        "id, track_id, title, cover_url, created_at, credits_remaining, status",
+      )
+      .eq("status", "active")
+      .gt("credits_remaining", 0)
       .order("created_at", { ascending: false });
 
     // If user is authenticated, exclude their own tracks
