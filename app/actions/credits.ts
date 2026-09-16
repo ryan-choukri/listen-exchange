@@ -44,7 +44,7 @@ export async function allocateTracksCredits(
       console.error("RPC error:", error);
       return {
         success: false,
-        message: error.message || "Failed to allocate credits",
+        message: error.message || "Failed to allocate listens",
       };
     }
 
@@ -67,10 +67,10 @@ export async function allocateTracksCredits(
   } catch (err) {
     const errorMessage =
       err instanceof Error ? err.message : "Unknown error occurred";
-    console.error("Error allocating credits:", errorMessage);
+    console.error("Error allocating listens:", errorMessage);
     return {
       success: false,
-      message: "Error allocating credits",
+      message: "Error allocating listens",
     };
   }
 }
@@ -98,7 +98,7 @@ export async function removeTracksCredits(
       console.error("RPC error:", error);
       return {
         success: false,
-        message: error.message || "Failed to remove credits",
+        message: error.message || "Failed to return listens",
       };
     }
 
@@ -121,10 +121,10 @@ export async function removeTracksCredits(
   } catch (err) {
     const errorMessage =
       err instanceof Error ? err.message : "Unknown error occurred";
-    console.error("Error removing credits:", errorMessage);
+    console.error("Error returning listens:", errorMessage);
     return {
       success: false,
-      message: "Error removing credits",
+      message: "Error returning listens",
     };
   }
 }

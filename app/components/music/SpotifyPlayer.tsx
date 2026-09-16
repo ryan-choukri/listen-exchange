@@ -9,7 +9,7 @@ export function SpotifyPlayer({
   ready: boolean;
 }) {
   return (
-    <div className="overflow-hidden rounded-card border border-ink/15 bg-spotify-surface p-2 shadow-card">
+    <div className="overflow-hidden rounded-card border border-border bg-spotify-surface p-2 shadow-card">
       <div className="mb-2 flex items-center justify-between px-1 text-white">
         <div className="flex items-center gap-2">
           <Icon name="spotify" className="size-4" />

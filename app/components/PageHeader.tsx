@@ -12,7 +12,7 @@ export function PageHeader({
   aside?: ReactNode;
 }) {
   return (
-    <header className="flex flex-col gap-5 border-b border-ink pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <header className="flex flex-col gap-5 border-b border-strong pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div>
         {eyebrow && (
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-coral-strong">

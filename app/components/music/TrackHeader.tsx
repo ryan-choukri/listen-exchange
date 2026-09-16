@@ -18,7 +18,7 @@ export function TrackHeader({
       <img
         src={coverUrl}
         alt={`Cover art for ${title}`}
-        className="size-20 shrink-0 rounded-control border border-ink/15 object-cover sm:size-24"
+        className="size-20 shrink-0 rounded-control border border-border object-cover sm:size-24"
       />
       <div className="min-w-0 flex-1">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-coral-strong">
@@ -33,7 +33,9 @@ export function TrackHeader({
             <StatusBadge status={status} />
           ) : null}
           {typeof creditsRemaining === "number" && (
-            <Badge tone="blue">{creditsRemaining} credits left</Badge>
+            <Badge tone="blue">
+              {creditsRemaining} {creditsRemaining === 1 ? "listen" : "listens"} left
+            </Badge>
           )}
         </div>
       </div>

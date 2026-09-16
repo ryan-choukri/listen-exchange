@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LinkButton } from "./components/Button";
 import { UserMenu } from "./components/UserMenu";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { getUser } from "./actions/auth";
 import { BrandMark, Icon, Surface } from "./components/ui/design-system";
 
@@ -14,7 +15,10 @@ export default async function Home() {
           <Link href="/" aria-label="ListenExchange home">
             <BrandMark />
           </Link>
-          <UserMenu user={user} />
+          <div className="flex items-center gap-2">
+            <ThemeToggle compact />
+            <UserMenu user={user} />
+          </div>
         </div>
       </header>
 
@@ -22,7 +26,7 @@ export default async function Home() {
         <section className="relative mx-auto grid min-h-[calc(100vh-74px)] max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8 lg:py-20">
           <aside
             aria-label="ListenExchange is completely free"
-            className="pointer-events-none absolute left-1/2 top-[10px] z-30 w-20 -translate-x-1/2 -translate-y-1/2 rotate-2 rounded-control border-2 border-ink bg-blue-strong px-3 py-2 text-center text-white shadow-raised sm:w-50"
+            className="pointer-events-none absolute left-1/2 top-[10px] z-30 w-20 -translate-x-1/2 -translate-y-1/2 rotate-2 rounded-control border-2 border-strong bg-blue-soft px-3 py-2 text-center text-on-accent shadow-raised sm:w-50"
           >
             <p className="text-base text-xs sm:text-xl font-black leading-none tracking-tight">
               100% FREE
@@ -36,7 +40,7 @@ export default async function Home() {
           </aside>
 
           <div className="relative z-10">
-            <p className="inline-flex -rotate-1 items-center gap-2 rounded-full border border-ink bg-lime px-4 py-2 text-xs font-black uppercase tracking-[0.15em] shadow-raised">
+            <p className="inline-flex -rotate-1 items-center gap-2 rounded-full border border-strong bg-lime px-4 py-2 text-xs font-black uppercase tracking-[0.15em] text-on-accent shadow-raised">
               <Icon name="sparkle" className="size-4" />
               Exchange listening between artists
             </p>
@@ -72,14 +76,14 @@ export default async function Home() {
           </div>
 
           <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-            <div className="absolute -left-8 -top-9 -rotate-6 rounded-control bg-blue-soft px-5 py-4 font-marker text-lg leading-tight text-ink shadow-card">
+            <div className="absolute -left-8 -top-9 -rotate-6 rounded-control bg-blue-soft px-5 py-4 font-marker text-lg leading-tight text-on-accent shadow-card">
               Listen.
               <br />
               Share.
               <br />
               Support.
             </div>
-            <Surface className="relative overflow-hidden border-2 border-ink p-5 shadow-raised sm:p-7">
+            <Surface className="relative overflow-hidden border-2 border-strong p-5 shadow-raised sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
@@ -89,7 +93,7 @@ export default async function Home() {
                     Your song gonna be listened
                   </h2>
                 </div>
-                <span className="grid size-12 shrink-0 place-items-center rounded-full border border-ink bg-coral text-ink">
+                <span className="grid size-12 shrink-0 place-items-center rounded-full border border-strong bg-coral text-on-accent">
                   <Icon name="headphones" />
                 </span>
               </div>
@@ -101,7 +105,7 @@ export default async function Home() {
                   [
                     "trophy",
                     "Earn",
-                    "Get credits for your tracks to be listened",
+                    "Earn listens for your own tracks",
                   ],
                 ].map(([icon, title, description], index) => (
                   <div
@@ -132,8 +136,8 @@ export default async function Home() {
                 ))}
               </div>
             </Surface>
-            <p className="absolute -bottom-10 right-2 rotate-2 rounded-control bg-lime px-4 py-3 font-marker text-base text-ink shadow-card">
-              1 credit = 1 artist pushed further.
+            <p className="absolute -bottom-10 right-2 rotate-2 rounded-control bg-lime px-4 py-3 font-marker text-base text-on-accent shadow-card">
+              1 listen = 1 artist pushed further.
             </p>
           </div>
         </section>

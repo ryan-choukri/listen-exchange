@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BrandMark, Surface } from "@/app/components/ui/design-system";
+import { ThemeToggle } from "@/app/components/ThemeToggle";
 
 export function AuthShell({
   eyebrow,
@@ -19,6 +20,9 @@ export function AuthShell({
     <main className="paper-canvas relative grid min-h-screen place-items-center overflow-hidden bg-background px-4 py-10 text-ink sm:px-6">
       <div className="absolute -left-16 top-24 size-52 rounded-full bg-coral/10 blur-3xl" />
       <div className="absolute -right-16 bottom-20 size-56 rounded-full bg-blue-soft/25 blur-3xl" />
+      <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
+        <ThemeToggle compact />
+      </div>
       <div className="relative w-full max-w-md">
         <Link href="/" className="inline-flex">
           <BrandMark />

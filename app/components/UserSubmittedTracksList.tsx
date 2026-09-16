@@ -5,6 +5,7 @@ import {
   getUserSubmittedTracks,
   deleteSubmittedTrack,
 } from "@/app/actions/submit";
+import { announceCreditsUpdated } from "@/app/lib/credits-events";
 import { CreditAllocationModal } from "./CreditAllocationModal";
 import {
   Badge,
@@ -38,6 +39,7 @@ export function UserSubmittedTracksList({
   const [tracks, setTracks] = useState<SubmittedTrack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedTrack, setSelectedTrack] = useState<SubmittedTrack | null>(
     null,
@@ -55,13 +57,23 @@ export function UserSubmittedTracksList({
     loadTracks();
   }, [refreshKey]);
 
-  const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Are you sure you want to delete "${title}"?`)) {
+  const handleDelete = async (
+    id: string,
+    title: string,
+    unusedListens: number,
+  ) => {
+    const listenLabel = unusedListens === 1 ? "listen" : "listens";
+    if (
+      !confirm(
+        `Remove "${title}"? ${unusedListens} unused ${listenLabel} will be returned to your balance. Completed listens and feedback will be preserved.`,
+      )
+    ) {
       return;
     }
 
     setDeletingId(id);
     setDeleteError(null);
+    setDeleteSuccess(null);
 
     try {
       const result = await deleteSubmittedTrack(id);
@@ -69,6 +81,8 @@ export function UserSubmittedTracksList({
       if (result.success) {
         // Remove from local state
         setTracks((prev) => prev.filter((track) => track.id !== id));
+        setDeleteSuccess(result.message);
+        announceCreditsUpdated(result.creditsBalance);
         // Call parent callback to refresh stats
         onTrackDeleted?.();
       } else {
@@ -105,7 +119,10 @@ export function UserSubmittedTracksList({
       <Surface className="space-y-4 p-5 sm:p-6">
         <div className="h-5 w-48 animate-pulse rounded bg-surface-muted" />
         {[0, 1].map((item) => (
-          <div key={item} className="flex items-center gap-4 border-t border-border pt-4">
+          <div
+            key={item}
+            className="flex items-center gap-4 border-t border-border pt-4"
+          >
             <div className="size-12 animate-pulse rounded-control bg-surface-muted" />
             <div className="flex-1 space-y-2">
               <div className="h-4 w-2/3 animate-pulse rounded bg-surface-muted" />
@@ -143,8 +160,16 @@ export function UserSubmittedTracksList({
 
       {deleteError && (
         <div className="mx-5 mt-4 sm:mx-6">
-          <Notice tone="danger" title="Track could not be deleted">
+          <Notice tone="danger" title="Track could not be removed">
             {deleteError}
+          </Notice>
+        </div>
+      )}
+
+      {deleteSuccess && (
+        <div className="mx-5 mt-4 sm:mx-6">
+          <Notice tone="success" title="Track removed">
+            {deleteSuccess}
           </Notice>
         </div>
       )}
@@ -177,7 +202,8 @@ export function UserSubmittedTracksList({
                 status={track.status === "active" ? "active" : "pending"}
               />
               <Badge tone="blue" className="whitespace-nowrap">
-                {track.credits_remaining} credits
+                {track.credits_remaining}{" "}
+                {track.credits_remaining === 1 ? "listen" : "listens"}
               </Badge>
               <div className="flex gap-2">
                 <Button
@@ -189,13 +215,19 @@ export function UserSubmittedTracksList({
                   Allocate
                 </Button>
                 <Button
-                  onClick={() => handleDelete(track.id, track.title)}
+                  onClick={() =>
+                    handleDelete(
+                      track.id,
+                      track.title,
+                      track.credits_remaining,
+                    )
+                  }
                   loading={deletingId === track.id}
                   variant="danger"
                   size="sm"
                   icon="close"
                 >
-                  Delete
+                  Remove
                 </Button>
               </div>
             </div>

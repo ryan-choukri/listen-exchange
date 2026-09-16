@@ -19,6 +19,7 @@ export default function SubmitPage() {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
   const validateUrl = (urlStr: string): boolean => {
@@ -95,12 +96,16 @@ export default function SubmitPage() {
 
       if (result.success) {
         setSuccess(true);
+        setSuccessMessage(result.message);
         setUrl("");
         setOembedData(null);
         // Refresh the UserTracksStats component
         setRefreshKey((prev) => prev + 1);
         // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(false), 3000);
+        setTimeout(() => {
+          setSuccess(false);
+          setSuccessMessage("");
+        }, 3000);
       } else {
         setError(result.message);
       }
@@ -133,8 +138,8 @@ export default function SubmitPage() {
 
         {success && (
           <div className="fixed bottom-24 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm lg:bottom-6 lg:right-6">
-            <Notice tone="success" title="Track Submitted!">
-              Your track has been added to the discovery queue.
+            <Notice tone="success" title="Track ready">
+              {successMessage}
             </Notice>
           </div>
         )}
@@ -208,7 +213,7 @@ export default function SubmitPage() {
 
             <div className="space-y-5 p-5 sm:p-6">
               <div
-                className="overflow-hidden rounded-card border border-ink/15 bg-spotify-surface p-2"
+                className="overflow-hidden rounded-card border border-border bg-spotify-surface p-2"
                 dangerouslySetInnerHTML={{ __html: oembedData.html }}
               />
 
@@ -220,7 +225,7 @@ export default function SubmitPage() {
 
               {success && (
                 <Notice tone="success" title="Track submitted successfully">
-                  It is now available in Discovery.
+                  {successMessage}
                 </Notice>
               )}
 

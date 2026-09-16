@@ -200,15 +200,15 @@ type ButtonSize = NonNullable<ButtonProps["size"]>;
 
 const buttonVariants: Record<ButtonVariant, string> = {
   primary:
-    "border-ink bg-coral text-ink shadow-raised hover:-translate-y-0.5 hover:bg-coral-strong active:translate-x-0.5 active:translate-y-0.5 active:shadow-none",
+    "border-strong bg-coral text-on-accent shadow-raised hover:-translate-y-0.5 hover:bg-coral-strong active:translate-x-0.5 active:translate-y-0.5 active:shadow-none",
   secondary:
-    "border-ink bg-lime text-ink hover:bg-lime-strong active:bg-lime-strong",
+    "border-strong bg-lime text-on-accent hover:bg-lime-strong active:bg-lime-strong",
   outline:
-    "border-ink bg-surface text-ink hover:bg-surface-muted active:bg-border",
+    "border-strong bg-surface text-ink hover:bg-surface-muted active:bg-border",
   ghost:
     "border-transparent bg-transparent text-ink hover:bg-surface-muted active:bg-border",
   danger:
-    "border-danger bg-danger text-white hover:brightness-90 active:brightness-75",
+    "border-danger-solid bg-danger-solid text-on-danger hover:brightness-90 active:brightness-75",
 };
 
 const buttonSizes: Record<ButtonSize, string> = {
@@ -224,7 +224,7 @@ function buttonClasses(
   className?: string,
 ) {
   return joinClasses(
-    "inline-flex items-center justify-center rounded-control border font-semibold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-strong focus-visible:ring-offset-2 disabled:pointer-events-none disabled:border-border disabled:bg-surface-muted disabled:text-muted disabled:shadow-none",
+    "inline-flex items-center justify-center rounded-control border font-semibold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:border-border disabled:bg-surface-muted disabled:text-muted disabled:shadow-none",
     buttonVariants[variant],
     buttonSizes[size],
     className,
@@ -587,14 +587,14 @@ export function ProgressBar({
 
 export function CreditPill({
   credits = 50,
-  label = "credits",
+  label = "listens",
 }: {
   credits?: number;
   label?: string;
 }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-warning/45 bg-warning/15 px-3 py-1.5 text-sm font-bold text-ink">
-      <span className="grid size-5 place-items-center rounded-full bg-warning text-[10px] text-ink">
+      <span className="grid size-5 place-items-center rounded-full bg-warning text-[10px] text-on-accent">
         ★
       </span>
       {credits} {label}
@@ -683,7 +683,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-ink/65 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-overlay p-4 backdrop-blur-sm"
       role="presentation"
       onMouseDown={onClose}
     >
@@ -722,9 +722,9 @@ export function Modal({
 export function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <div className="inline-flex items-center gap-2.5 text-ink">
-      <span className="relative grid size-10 place-items-center rounded-full border-2 border-ink bg-coral shadow-[2px_2px_0_var(--ink)]">
+      <span className="relative grid size-10 place-items-center rounded-full border-2 border-strong bg-coral text-on-accent shadow-raised">
         <Icon name="music" className="size-5" />
-        <span className="absolute -right-1 -top-1 size-2.5 rounded-full border border-ink bg-lime" />
+        <span className="absolute -right-1 -top-1 size-2.5 rounded-full border border-strong bg-lime" />
       </span>
       {!compact && (
         <span className="leading-none">
@@ -749,15 +749,15 @@ export function AlbumArtwork({
       role="img"
       aria-label={`Pochette de ${title}`}
       className={joinClasses(
-        "relative shrink-0 overflow-hidden rounded-control border border-ink/15 bg-gradient-to-br from-coral via-art-coral-soft to-blue-soft",
+        "relative shrink-0 overflow-hidden rounded-control border border-border bg-gradient-to-br from-coral via-art-coral-soft to-blue-soft",
         sizes[size],
       )}
     >
-      <span className="absolute -bottom-[12%] left-[12%] h-[75%] w-[16%] -rotate-12 rounded-t-full bg-ink/90" />
-      <span className="absolute -bottom-[10%] left-[42%] h-[68%] w-[14%] rotate-6 rounded-t-full bg-ink/80" />
-      <span className="absolute -bottom-[14%] right-[12%] h-[82%] w-[16%] rotate-12 rounded-t-full bg-ink/90" />
+      <span className="absolute -bottom-[12%] left-[12%] h-[75%] w-[16%] -rotate-12 rounded-t-full bg-on-accent/90" />
+      <span className="absolute -bottom-[10%] left-[42%] h-[68%] w-[14%] rotate-6 rounded-t-full bg-on-accent/80" />
+      <span className="absolute -bottom-[14%] right-[12%] h-[82%] w-[16%] rotate-12 rounded-t-full bg-on-accent/90" />
       <span className="absolute left-[5%] top-[8%] size-[24%] rounded-full bg-lime/90" />
-      <span className="absolute right-[8%] top-[14%] font-marker text-[10px] leading-none text-ink/75">
+      <span className="absolute right-[8%] top-[14%] font-marker text-[10px] leading-none text-on-accent/75">
         VOL. 01
       </span>
     </div>
@@ -766,7 +766,7 @@ export function AlbumArtwork({
 
 export function SpotifyEmbed({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="overflow-hidden rounded-card border border-ink/15 bg-spotify-surface p-2 shadow-card">
+    <div className="overflow-hidden rounded-card border border-border bg-spotify-surface p-2 shadow-card">
       <div className="mb-2 flex items-center justify-between px-1 text-white">
         <div className="flex items-center gap-2">
           <Icon name="spotify" className="size-4" />

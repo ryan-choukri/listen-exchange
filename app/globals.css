@@ -1,12 +1,53 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: dark;
+  --background: #171512;
+  --foreground: #f7f1e7;
+  --surface: #211e1a;
+  --surface-muted: #2c2823;
+  --ink: #f7f1e7;
+  --muted: #b2aa9f;
+  --muted-foreground: #b2aa9f;
+  --coral: #ff765c;
+  --coral-strong: #ff9a84;
+  --lime: #c6f65b;
+  --lime-strong: #a9dd4c;
+  --blue-soft: #8ebde8;
+  --blue-strong: #86bee9;
+  --border: #403c36;
+  --border-strong: #777168;
+  --success: #7ac595;
+  --danger: #f08a80;
+  --danger-solid: #b9443b;
+  --on-danger: #fffdf8;
+  --warning: #ecb248;
+  --on-accent: #1f1f1f;
+  --inverse-surface: #0e0e0c;
+  --inverse-foreground: #fffdf8;
+  --overlay: rgb(5 5 4 / 74%);
+  --spotify-surface: #10100f;
+  --art-coral-soft: #ff987f;
+  --canvas-coral-glow: rgba(38, 27, 60, 0.193);
+  --canvas-blue-glow: rgb(134 190 233 / 9%);
+  --canvas-grid: rgb(255 253 248 / 2.8%);
+  --paper-note-shadow: 2px 4px 12px rgb(0 0 0 / 34%);
+  --scrollbar-track: rgb(255 253 248 / 4%);
+  --scrollbar-thumb: rgb(255 253 248 / 20%);
+  --scrollbar-thumb-hover: rgb(255 253 248 / 32%);
+  --shadow-card-value: 0 12px 34px rgb(9 9 8 / 44%);
+  --shadow-raised-value: 3px 3px 0 #090908;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
   --background: #f8f5ee;
   --foreground: #1f1f1f;
   --surface: #fffdf8;
   --surface-muted: #f0eee7;
   --ink: #1f1f1f;
   --muted: #6f716e;
+  --muted-foreground: #6f716e;
   --coral: #ff6b4a;
   --coral-strong: #e85034;
   --lime: #c6f65b;
@@ -14,11 +55,27 @@
   --blue-soft: #9bc8f2;
   --blue-strong: #3976a8;
   --border: #d8d5ce;
+  --border-strong: #1f1f1f;
   --success: #3d7c59;
   --danger: #c84c42;
+  --danger-solid: #c84c42;
+  --on-danger: #fffdf8;
   --warning: #e7a42d;
+  --on-accent: #1f1f1f;
+  --inverse-surface: #1f1f1f;
+  --inverse-foreground: #fffdf8;
+  --overlay: rgb(31 31 31 / 65%);
   --spotify-surface: #171717;
   --art-coral-soft: #ff987f;
+  --canvas-coral-glow: rgb(255 107 74 / 7%);
+  --canvas-blue-glow: rgb(155 200 242 / 12%);
+  --canvas-grid: rgb(31 31 31 / 1.8%);
+  --paper-note-shadow: 2px 4px 10px rgb(31 31 31 / 13%);
+  --scrollbar-track: rgb(31 31 31 / 4%);
+  --scrollbar-thumb: rgb(31 31 31 / 22%);
+  --scrollbar-thumb-hover: rgb(31 31 31 / 34%);
+  --shadow-card-value: 0 10px 30px rgb(31 31 31 / 8%);
+  --shadow-raised-value: 3px 3px 0 rgb(31 31 31 / 90%);
 }
 
 @theme inline {
@@ -28,6 +85,7 @@
   --color-foreground: var(--foreground);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-coral: var(--coral);
   --color-coral-strong: var(--coral-strong);
   --color-lime: var(--lime);
@@ -35,9 +93,16 @@
   --color-blue-soft: var(--blue-soft);
   --color-blue-strong: var(--blue-strong);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-success: var(--success);
   --color-danger: var(--danger);
+  --color-danger-solid: var(--danger-solid);
+  --color-on-danger: var(--on-danger);
   --color-warning: var(--warning);
+  --color-on-accent: var(--on-accent);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-foreground: var(--inverse-foreground);
+  --color-overlay: var(--overlay);
   --color-spotify-surface: var(--spotify-surface);
   --color-art-coral-soft: var(--art-coral-soft);
   --font-sans: var(--font-geist-sans);
@@ -46,8 +111,8 @@
   --font-marker: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
   --radius-card: 1rem;
   --radius-control: 0.75rem;
-  --shadow-card: 0 10px 30px rgba(31, 31, 31, 0.08);
-  --shadow-raised: 3px 3px 0 rgba(31, 31, 31, 0.9);
+  --shadow-card: var(--shadow-card-value);
+  --shadow-raised: var(--shadow-raised-value);
 }
 
 *,
@@ -71,17 +136,37 @@ html {
   scroll-behavior: smooth;
 }
 
+:root[data-theme="light"] .theme-option-light,
+:root:not([data-theme="light"]) .theme-option-dark {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 16%);
+}
+
 /* Shared paper canvas used by the application and its living design-system route. */
 .design-system,
 .paper-canvas {
-  color-scheme: light;
+  color-scheme: inherit;
   background-color: var(--background);
   background-image:
-    radial-gradient(circle at 18% 12%, rgba(255, 107, 74, 0.07), transparent 20rem),
-    radial-gradient(circle at 88% 28%, rgba(155, 200, 242, 0.12), transparent 24rem),
-    linear-gradient(rgba(31, 31, 31, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(31, 31, 31, 0.018) 1px, transparent 1px);
-  background-size: auto, auto, 24px 24px, 24px 24px;
+    radial-gradient(
+      circle at 18% 12%,
+      var(--canvas-coral-glow),
+      transparent 20rem
+    ),
+    radial-gradient(
+      circle at 88% 28%,
+      var(--canvas-blue-glow),
+      transparent 24rem
+    ),
+    linear-gradient(var(--canvas-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    24px 24px,
+    24px 24px;
 }
 
 .design-system iframe[src*="spotify.com"] {
@@ -110,7 +195,7 @@ html {
 }
 
 .paper-note {
-  box-shadow: 2px 4px 10px rgba(31, 31, 31, 0.13);
+  box-shadow: var(--paper-note-shadow);
   transform: rotate(-1.2deg);
 }
 
@@ -127,14 +212,14 @@ iframe[src*="spotify.com"] {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(31, 31, 31, 0.04);
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(31, 31, 31, 0.22);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(31, 31, 31, 0.34);
+  background: var(--scrollbar-thumb-hover);
 }

@@ -52,46 +52,46 @@ export function CreditAllocationModal({
     setIsLoading(true);
 
     try {
-      const creditAmount = parseInt(amount, 10);
-      if (isNaN(creditAmount) || creditAmount <= 0) {
+      const listenAmount = parseInt(amount, 10);
+      if (isNaN(listenAmount) || listenAmount <= 0) {
         setError("Please enter a valid positive number");
         setIsLoading(false);
         return;
       }
 
       if (mode === "allocate") {
-        if (userBalance !== null && creditAmount > userBalance) {
+        if (userBalance !== null && listenAmount > userBalance) {
           setError(
-            `Insufficient credits. You have ${userBalance} but need ${creditAmount}`,
+            `Insufficient listens. You have ${userBalance} but need ${listenAmount}`,
           );
           setIsLoading(false);
           return;
         }
 
-        const result = await allocateTracksCredits(trackId, creditAmount);
+        const result = await allocateTracksCredits(trackId, listenAmount);
         if (result.success) {
           announceCreditsUpdated(result.credits_balance);
           onSuccess();
           onClose();
         } else {
-          setError(result.message || "Failed to allocate credits");
+          setError(result.message || "Failed to allocate listens");
         }
       } else {
-        if (creditAmount > currentCredits) {
+        if (listenAmount > currentCredits) {
           setError(
-            `Track has only ${currentCredits} credits but you want to remove ${creditAmount}`,
+            `Track has only ${currentCredits} listens but you want to remove ${listenAmount}`,
           );
           setIsLoading(false);
           return;
         }
 
-        const result = await removeTracksCredits(trackId, creditAmount);
+        const result = await removeTracksCredits(trackId, listenAmount);
         if (result.success) {
           announceCreditsUpdated(result.credits_balance);
           onSuccess();
           onClose();
         } else {
-          setError(result.message || "Failed to remove credits");
+          setError(result.message || "Failed to return listens");
         }
       }
     } catch (submitError) {
@@ -120,7 +120,7 @@ export function CreditAllocationModal({
     <Modal
       open={isOpen}
       onClose={onClose}
-      title="Manage credits"
+      title="Manage listens"
       description={trackTitle}
     >
       <div className="grid grid-cols-2 rounded-control bg-surface-muted p-1">
@@ -146,7 +146,7 @@ export function CreditAllocationModal({
           disabled={isLoading || currentCredits === 0}
           className={`rounded-lg px-3 py-2 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${mode === "remove" ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink"}`}
         >
-          − Remove
+          − Return
         </button>
       </div>
 
@@ -160,14 +160,14 @@ export function CreditAllocationModal({
           </div>
         </div>
         <div className="rounded-control border border-border bg-background p-3">
-          <p className="text-xs text-muted">Credits remaining</p>
+          <p className="text-xs text-muted">Listens remaining</p>
           <p className="mt-1 text-2xl font-black text-ink">{currentCredits}</p>
         </div>
       </div>
 
       <div className="mt-4 rounded-control border border-blue-strong/20 bg-blue-soft/25 p-3">
         <p className="text-xs text-blue-strong">
-          {mode === "allocate" ? "Your available credits" : "Track credits available"}
+          {mode === "allocate" ? "Your available listens" : "Track listens available"}
         </p>
         <p className="mt-1 text-xl font-black text-ink">
           {mode === "allocate"
@@ -180,7 +180,7 @@ export function CreditAllocationModal({
 
       {error && (
         <div className="mt-4">
-          <Notice tone="danger" title="Credits could not be updated">
+          <Notice tone="danger" title="Listens could not be updated">
             {error}
           </Notice>
         </div>
@@ -189,7 +189,7 @@ export function CreditAllocationModal({
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         <div>
           <label htmlFor="amount" className="block text-sm font-bold text-ink">
-            Credits to {mode === "allocate" ? "allocate" : "remove"}
+            Listens to {mode === "allocate" ? "allocate" : "return"}
           </label>
           <div className="mt-2 flex items-center gap-2">
             <input
@@ -213,7 +213,7 @@ export function CreditAllocationModal({
                   type="button"
                   onClick={() => setAmount(number.toString())}
                   disabled={isLoading}
-                  className="rounded-control border border-border bg-surface px-2.5 py-3 text-xs font-bold text-ink transition hover:border-ink disabled:opacity-50"
+                  className="rounded-control border border-border bg-surface px-2.5 py-3 text-xs font-bold text-ink transition hover:border-strong disabled:opacity-50"
                 >
                   {number}
                 </button>
@@ -225,11 +225,11 @@ export function CreditAllocationModal({
         {creditAmount > 0 && (
           <div className="rounded-control border border-border bg-background p-3 text-xs text-muted">
             <p className="flex justify-between gap-4">
-              <span>{mode === "allocate" ? "Your balance" : "Track credits"}</span>
+              <span>{mode === "allocate" ? "Your balance" : "Track listens"}</span>
               <strong className="text-ink">{sourceBalance ?? "…"}</strong>
             </p>
             <p className="mt-1 flex justify-between gap-4">
-              <span>{mode === "allocate" ? "Will allocate" : "Will remove"}</span>
+              <span>{mode === "allocate" ? "Will allocate" : "Will return"}</span>
               <strong className="text-coral-strong">−{creditAmount}</strong>
             </p>
             <p className="mt-2 flex justify-between gap-4 border-t border-border pt-2">
@@ -241,10 +241,10 @@ export function CreditAllocationModal({
           </div>
         )}
 
-        <Notice tone="info" title="How credits work">
+        <Notice tone="info" title="How listens work">
           {mode === "allocate"
-            ? "Allocating credits activates the track so listeners can earn credits by giving feedback."
-            : "Removed credits return to your balance. A track with zero credits becomes inactive."}
+            ? "Allocating listens activates the track so listeners can earn one listen by giving feedback."
+            : "Returned listens go back to your balance. A track with zero listens becomes inactive."}
         </Notice>
 
         <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row">
@@ -263,7 +263,7 @@ export function CreditAllocationModal({
             loading={isLoading}
             className="flex-1"
           >
-            {mode === "allocate" ? "Allocate" : "Remove"}
+            {mode === "allocate" ? "Allocate" : "Return"}
           </Button>
         </div>
       </form>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ThemeToggle } from "@/app/components/ThemeToggle";
 import {
   AlbumArtwork,
   AppSidebar,
@@ -25,16 +26,18 @@ import {
 } from "@/app/components/ui/design-system";
 
 const palette = [
-  { name: "Background", token: "background", value: "#F8F5EE", className: "bg-background" },
-  { name: "Surface", token: "surface", value: "#FFFDF8", className: "bg-surface" },
-  { name: "Foreground", token: "ink", value: "#1F1F1F", className: "bg-ink" },
-  { name: "Muted", token: "muted", value: "#6F716E", className: "bg-muted" },
-  { name: "Coral", token: "coral", value: "#FF6B4A", className: "bg-coral" },
-  { name: "Lime", token: "lime", value: "#C6F65B", className: "bg-lime" },
-  { name: "Blue soft", token: "blue-soft", value: "#9BC8F2", className: "bg-blue-soft" },
-  { name: "Border", token: "border", value: "#D8D5CE", className: "bg-border" },
-  { name: "Success", token: "success", value: "#3D7C59", className: "bg-success" },
-  { name: "Danger", token: "danger", value: "#C84C42", className: "bg-danger" },
+  { name: "Background", token: "background", value: "--background", className: "bg-background" },
+  { name: "Surface", token: "surface", value: "--surface", className: "bg-surface" },
+  { name: "Surface muted", token: "surface-muted", value: "--surface-muted", className: "bg-surface-muted" },
+  { name: "Foreground", token: "ink", value: "--ink", className: "bg-ink" },
+  { name: "Muted", token: "muted", value: "--muted", className: "bg-muted" },
+  { name: "Coral", token: "coral", value: "--coral", className: "bg-coral" },
+  { name: "Lime", token: "lime", value: "--lime", className: "bg-lime" },
+  { name: "Blue soft", token: "blue-soft", value: "--blue-soft", className: "bg-blue-soft" },
+  { name: "Border", token: "border", value: "--border", className: "bg-border" },
+  { name: "Strong border", token: "border-strong", value: "--border-strong", className: "bg-border-strong" },
+  { name: "Success", token: "success", value: "--success", className: "bg-success" },
+  { name: "Danger", token: "danger", value: "--danger", className: "bg-danger" },
 ];
 
 const foundations = [
@@ -98,12 +101,12 @@ function Header() {
     ["Composants", "#composants"],
     ["Navigation", "#navigation"],
     ["Écoute", "#ecoute"],
-    ["Crédits", "#credits"],
+    ["Listens", "#credits"],
     ["Assemblages", "#assemblages"],
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ink/10 bg-background/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-5 px-4 py-3 sm:px-6 lg:px-8">
         <a href="#top" aria-label="Retour en haut">
           <BrandMark />
@@ -120,6 +123,7 @@ function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <ThemeToggle compact />
           <Badge tone="lime">v0.1 · preview</Badge>
           <Button variant="ghost" size="icon" icon="menu" className="lg:hidden">
             Menu
@@ -152,7 +156,7 @@ function FoundationsSection() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             {palette.map((color) => (
               <div key={color.token} className="min-w-0">
-                <div className={`h-20 rounded-control border border-ink/10 ${color.className}`} />
+                <div className={`h-20 rounded-control border border-border ${color.className}`} />
                 <p className="mt-2 truncate text-xs font-bold text-ink">{color.name}</p>
                 <p className="truncate font-mono text-[10px] text-muted">{color.value}</p>
               </div>
@@ -166,7 +170,7 @@ function FoundationsSection() {
           <h3 className="mt-5 max-w-sm text-4xl font-black leading-[0.98] tracking-[-0.04em] text-ink">
             La musique avance quand les gens <span className="marker-underline">s’écoutent</span>.
           </h3>
-          <div className="paper-note mt-8 ml-auto w-fit bg-lime px-4 py-3 font-marker text-lg leading-tight text-ink">
+          <div className="paper-note mt-8 ml-auto w-fit bg-lime px-4 py-3 font-marker text-lg leading-tight text-on-accent">
             Good music.<br />Real people.
           </div>
           <p className="mt-8 text-sm leading-6 text-muted">
@@ -213,15 +217,15 @@ function FoundationsSection() {
           </div>
           <div className="mt-7 grid grid-cols-3 gap-3 text-center">
             <div>
-              <div className="h-14 rounded-none border border-ink bg-background" />
+              <div className="h-14 rounded-none border border-strong bg-background" />
               <p className="mt-2 text-[10px] text-muted">0</p>
             </div>
             <div>
-              <div className="h-14 rounded-control border border-ink bg-background" />
+              <div className="h-14 rounded-control border border-strong bg-background" />
               <p className="mt-2 text-[10px] text-muted">12 px</p>
             </div>
             <div>
-              <div className="h-14 rounded-card border border-ink bg-background" />
+              <div className="h-14 rounded-card border border-strong bg-background" />
               <p className="mt-2 text-[10px] text-muted">16 px</p>
             </div>
           </div>
@@ -363,8 +367,8 @@ function NavigationSection() {
                   <p className="text-sm font-black text-ink">Bonjour, Mia</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CreditPill credits={50} label="crédits" />
-                  <div className="grid size-9 place-items-center rounded-full border border-ink bg-blue-soft text-sm font-black text-ink">M</div>
+                  <CreditPill credits={50} label="listens" />
+                  <div className="grid size-9 place-items-center rounded-full border border-strong bg-blue-soft text-sm font-black text-on-accent">M</div>
                 </div>
               </div>
               <div className="p-4 sm:p-6">
@@ -391,7 +395,7 @@ function NavigationSection() {
           </div>
         </Surface>
 
-        <div className="mx-auto w-full max-w-[360px] rounded-[2.2rem] border-[7px] border-ink bg-ink p-1 shadow-card">
+        <div className="mx-auto w-full max-w-[360px] rounded-[2.2rem] border-[7px] border-strong bg-inverse-surface p-1 shadow-card">
           <div className="overflow-hidden rounded-[1.55rem] bg-background">
             <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3">
               <BrandMark compact />
@@ -403,7 +407,7 @@ function NavigationSection() {
             <div className="min-h-[455px] px-4 py-5">
               <div className="flex items-center justify-between">
                 <div><p className="text-xs font-bold text-coral-strong">POUR TOI</p><h3 className="text-2xl font-black text-ink">À écouter</h3></div>
-                <CreditPill credits={12} label="crédits" />
+                <CreditPill credits={12} label="listens" />
               </div>
               <div className="mt-5 rounded-card border border-border bg-surface p-3 shadow-card">
                 <div className="flex items-center gap-3">
@@ -443,7 +447,7 @@ function ListeningSection() {
           <button
             key={item.id}
             onClick={() => setStep(item.id)}
-            className={`rounded-full border px-3 py-2 text-xs font-bold transition ${step === item.id ? "border-ink bg-ink text-white" : "border-border bg-surface text-muted hover:border-ink hover:text-ink"}`}
+            className={`rounded-full border px-3 py-2 text-xs font-bold transition ${step === item.id ? "border-strong bg-inverse-surface text-inverse-foreground" : "border-border bg-surface text-muted hover:border-strong hover:text-ink"}`}
           >
             {item.label}
           </button>
@@ -454,12 +458,12 @@ function ListeningSection() {
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <Surface className="overflow-hidden">
           <div className="grid gap-0 md:grid-cols-[210px_1fr]">
-            <div className="relative bg-ink p-5">
+            <div className="relative bg-inverse-surface p-5">
               <AlbumArtwork />
-              <div className="mt-4 text-white">
+              <div className="mt-4 text-inverse-foreground">
                 <p className="text-2xl font-black tracking-tight">Golden Hours</p>
-                <p className="mt-1 text-sm text-white/60">Luna Rivers</p>
-                <div className="mt-3 flex flex-wrap gap-2"><Badge tone="coral">Indie</Badge><Badge className="border-white/15 bg-white/10 text-white">4:12</Badge></div>
+                <p className="mt-1 text-sm text-inverse-foreground/60">Luna Rivers</p>
+                <div className="mt-3 flex flex-wrap gap-2"><Badge tone="coral">Indie</Badge><Badge className="border-inverse-foreground/15 bg-inverse-foreground/10 text-inverse-foreground">4:12</Badge></div>
               </div>
               <DoodleStar className="absolute -right-5 bottom-8 size-14 rotate-12 text-lime" />
             </div>
@@ -511,15 +515,15 @@ function ListeningSection() {
               <button
                 key={item.id}
                 onClick={() => setStep(item.id)}
-                className={`flex w-full items-center gap-4 rounded-card border p-4 text-left transition ${active ? "border-ink bg-lime/40 shadow-raised" : "border-border bg-surface hover:border-ink/40"}`}
+                className={`flex w-full items-center gap-4 rounded-card border p-4 text-left transition ${active ? "border-strong bg-lime/40 shadow-raised" : "border-border bg-surface hover:border-strong/40"}`}
               >
-                <span className={`grid size-11 shrink-0 place-items-center rounded-full border ${active ? "border-ink bg-surface text-ink" : "border-border bg-background text-muted"}`}><Icon name={icons[index]} /></span>
+                <span className={`grid size-11 shrink-0 place-items-center rounded-full border ${active ? "border-strong bg-surface text-ink" : "border-border bg-background text-muted"}`}><Icon name={icons[index]} /></span>
                 <span className="min-w-0 flex-1"><span className="block text-sm font-black text-ink">{item.label}</span><span className="mt-0.5 block text-xs text-muted">{item.caption}</span></span>
                 <span className="font-mono text-xs text-muted">0{index + 1}</span>
               </button>
             );
           })}
-          <div className="paper-note ml-auto mt-6 w-56 bg-blue-soft p-4 font-marker text-base leading-snug text-ink">Le player reste Spotify. L’expérience autour devient ListenExchange. ♡</div>
+          <div className="paper-note ml-auto mt-6 w-56 bg-blue-soft p-4 font-marker text-base leading-snug text-on-accent">Le player reste Spotify. L’expérience autour devient ListenExchange. ♡</div>
         </div>
       </div>
     </section>
@@ -543,7 +547,7 @@ function AllocationModal({ onClose }: { onClose: () => void }) {
           <div className="rounded-control border border-border bg-background p-3"><p className="text-xs text-muted">Sur ce titre</p><p className="mt-1 text-2xl font-black text-ink">{trackCredits}</p></div>
         </div>
         <div className="mt-5">
-          <label htmlFor="credit-amount" className="text-sm font-bold text-ink">Crédits à {mode === "add" ? "ajouter" : "retirer"}</label>
+          <label htmlFor="credit-amount" className="text-sm font-bold text-ink">Listens à {mode === "add" ? "ajouter" : "retourner"}</label>
           <div className="mt-2 flex items-center gap-2">
             <Button size="icon" variant="outline" icon="minus" onClick={() => setAmount(Math.max(1, amount - 1))}>Retirer un crédit</Button>
             <input id="credit-amount" type="number" min="1" value={amount} onChange={(event) => setAmount(Math.max(1, Number(event.target.value)))} className="min-w-0 flex-1 rounded-control border border-border bg-surface px-3 py-2.5 text-center text-lg font-black text-ink outline-none focus:border-blue-strong focus:ring-2 focus:ring-blue-soft" />
@@ -551,7 +555,7 @@ function AllocationModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         <div className="mt-5 rounded-control border border-blue-strong/20 bg-blue-soft/25 p-3 text-xs leading-5 text-blue-strong">
-          Après l’opération : <strong>{mode === "add" ? balance - amount : balance + amount} crédits</strong> dans ton solde, <strong>{mode === "add" ? trackCredits + amount : Math.max(0, trackCredits - amount)} sur le titre</strong>.
+          Après l’opération : <strong>{mode === "add" ? balance - amount : balance + amount} listens</strong> dans ton solde, <strong>{mode === "add" ? trackCredits + amount : Math.max(0, trackCredits - amount)} sur le titre</strong>.
         </div>
         <div className="mt-6 flex gap-3"><Button variant="outline" className="flex-1" onClick={onClose}>Annuler</Button><Button className="flex-1" onClick={onClose}>{mode === "add" ? "Allouer" : "Récupérer"} {amount}</Button></div>
     </Modal>
@@ -571,19 +575,19 @@ function CreditsSection() {
       <div className="grid gap-6 xl:grid-cols-3">
         <Surface className="overflow-hidden xl:col-span-2">
           <div className="flex flex-col gap-4 border-b border-border bg-lime/35 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-            <div className="flex items-center gap-4"><span className="grid size-12 place-items-center rounded-full border border-ink bg-warning text-ink shadow-raised"><Icon name="wallet" /></span><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Solde disponible</p><p className="text-3xl font-black text-ink">50 crédits</p></div></div>
-            <Button icon="plus" onClick={() => setModalOpen(true)}>Allouer des crédits</Button>
+            <div className="flex items-center gap-4"><span className="grid size-12 place-items-center rounded-full border border-strong bg-warning text-on-accent shadow-raised"><Icon name="wallet" /></span><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Solde disponible</p><p className="text-3xl font-black text-ink">50 listens</p></div></div>
+            <Button icon="plus" onClick={() => setModalOpen(true)}>Allouer des listens</Button>
           </div>
           <div className="p-5 sm:p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
               <AlbumArtwork size="md" />
-              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-black text-ink">Golden Hours</p><StatusBadge status="active" /></div><p className="mt-1 text-xs text-muted">8 crédits attribués · jusqu’à 8 nouveaux retours</p><div className="mt-3"><ProgressBar value={32} tone="blue" /></div></div>
+              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-black text-ink">Golden Hours</p><StatusBadge status="active" /></div><p className="mt-1 text-xs text-muted">8 listens attribués · jusqu’à 8 nouveaux retours</p><div className="mt-3"><ProgressBar value={32} tone="blue" /></div></div>
               <div className="flex gap-2"><Button size="icon" variant="outline" icon="minus" onClick={() => setModalOpen(true)}>Retirer des crédits</Button><Button size="icon" variant="secondary" icon="plus" onClick={() => setModalOpen(true)}>Ajouter des crédits</Button></div>
             </div>
             <div className="my-5 h-px bg-border" />
             <div className="flex flex-col gap-5 opacity-70 sm:flex-row sm:items-center">
               <AlbumArtwork title="After Midnight" size="md" />
-              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-black text-ink">After Midnight</p><StatusBadge status="pending" /></div><p className="mt-1 text-xs text-muted">0 crédit · inactif dans la file d’écoute</p></div>
+              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-black text-ink">After Midnight</p><StatusBadge status="pending" /></div><p className="mt-1 text-xs text-muted">0 listen · inactif dans la file d’écoute</p></div>
               <Button variant="outline" icon="plus" onClick={() => setModalOpen(true)}>Réactiver</Button>
             </div>
           </div>
@@ -597,7 +601,7 @@ function CreditsSection() {
             <p className="mt-1 text-sm text-muted">artistes soutenus</p>
             <div className="mt-5"><ProgressBar value={70} tone="lime" label="Objectif personnel" detail="7 / 10" /></div>
           </Surface>
-          <Surface className="paper-note bg-coral p-5 text-ink">
+          <Surface className="paper-note bg-coral p-5 text-on-accent">
             <p className="font-marker text-xl leading-tight">1 crédit =<br />1 artiste plus loin.</p>
           </Surface>
         </div>
@@ -628,10 +632,10 @@ function SystemStatesSection() {
         <div className="space-y-3 lg:col-span-2 xl:col-span-2">
           <Notice tone="success" title="Titre ajouté">Il est maintenant visible dans ta liste et prêt à recevoir des crédits.</Notice>
           <Notice tone="danger" title="Le lien n’a pas pu être lu">Vérifie qu’il s’agit d’une URL Spotify de titre, puis réessaie.</Notice>
-          <div className="flex items-center gap-3 rounded-card border border-ink bg-ink p-4 text-white shadow-raised">
-            <span className="grid size-9 place-items-center rounded-full bg-lime text-ink"><Icon name="trophy" className="size-4" /></span>
-            <div className="min-w-0 flex-1"><p className="text-sm font-bold">+1 crédit gagné !</p><p className="text-xs text-white/60">Merci pour ton écoute et ton retour.</p></div>
-            <button className="text-white/60 hover:text-white" aria-label="Fermer la notification"><Icon name="close" className="size-4" /></button>
+          <div className="flex items-center gap-3 rounded-card border border-strong bg-inverse-surface p-4 text-inverse-foreground shadow-raised">
+            <span className="grid size-9 place-items-center rounded-full bg-lime text-on-accent"><Icon name="trophy" className="size-4" /></span>
+            <div className="min-w-0 flex-1"><p className="text-sm font-bold">+1 crédit gagné !</p><p className="text-xs text-inverse-foreground/60">Merci pour ton écoute et ton retour.</p></div>
+            <button className="text-inverse-foreground/60 hover:text-inverse-foreground" aria-label="Fermer la notification"><Icon name="close" className="size-4" /></button>
           </div>
         </div>
       </div>
@@ -645,7 +649,7 @@ function DesktopAssembly() {
       <div className="flex min-h-[660px]">
         <div className="hidden lg:block"><AppSidebar /></div>
         <div className="min-w-0 flex-1 bg-background">
-          <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6"><div><p className="text-xs font-bold text-muted">Découvrir</p><h3 className="font-black text-ink">Écoute du jour</h3></div><div className="flex items-center gap-3"><CreditPill credits={50} label="crédits" /><span className="grid size-9 place-items-center rounded-full bg-blue-soft text-sm font-black text-ink">M</span></div></div>
+          <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6"><div><p className="text-xs font-bold text-muted">Découvrir</p><h3 className="font-black text-ink">Écoute du jour</h3></div><div className="flex items-center gap-3"><CreditPill credits={50} label="listens" /><span className="grid size-9 place-items-center rounded-full bg-blue-soft text-sm font-black text-on-accent">M</span></div></div>
           <div className="mx-auto max-w-3xl p-4 sm:p-6">
             <div className="mb-5 flex items-end justify-between gap-4"><div><Badge tone="coral">1 titre sur 3</Badge><h3 className="mt-3 text-3xl font-black tracking-tight text-ink">Prends dix secondes. Fais une différence.</h3></div><p className="hidden font-marker text-lg text-coral-strong sm:block">good vibes only ↓</p></div>
             <div className="rounded-card border border-border bg-surface p-4 shadow-card">
@@ -664,15 +668,15 @@ function DesktopAssembly() {
 
 function MobileAssembly() {
   return (
-    <div className="mx-auto w-full max-w-[370px] rounded-[2.35rem] border-[7px] border-ink bg-ink p-1 shadow-card">
+    <div className="mx-auto w-full max-w-[370px] rounded-[2.35rem] border-[7px] border-strong bg-inverse-surface p-1 shadow-card">
       <div className="overflow-hidden rounded-[1.7rem] bg-background">
-        <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3"><BrandMark compact /><CreditPill credits={12} label="crédits" /><Button size="icon" variant="ghost" icon="menu" className="size-9">Menu</Button></div>
+        <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3"><BrandMark compact /><CreditPill credits={12} label="listens" /><Button size="icon" variant="ghost" icon="menu" className="size-9">Menu</Button></div>
         <div className="p-4">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-coral-strong">Découvrir · 1/3</p>
           <h3 className="mt-1 text-2xl font-black tracking-tight text-ink">Dix secondes pour écouter.</h3>
           <div className="mt-4 rounded-card border border-border bg-surface p-3 shadow-card">
             <div className="flex items-center gap-3"><AlbumArtwork size="md" /><div className="min-w-0"><p className="truncate font-black text-ink">Golden Hours</p><p className="text-xs text-muted">Luna Rivers</p><Badge tone="coral" className="mt-2">Indie</Badge></div></div>
-            <div className="mt-3 overflow-hidden rounded-control border border-ink/15 bg-ink p-2 text-white"><div className="flex items-center gap-2"><Icon name="spotify" className="size-4" /><span className="text-[10px] font-bold">SPOTIFY EMBED</span></div><p className="mt-3 text-xs text-white/55">Le lecteur officiel occupe cette zone sur mobile.</p><div className="mt-3 h-1.5 rounded-full bg-white/15"><div className="h-full w-2/5 rounded-full bg-white/70" /></div></div>
+            <div className="mt-3 overflow-hidden rounded-control border border-border bg-spotify-surface p-2 text-white"><div className="flex items-center gap-2"><Icon name="spotify" className="size-4" /><span className="text-[10px] font-bold">SPOTIFY EMBED</span></div><p className="mt-3 text-xs text-white/55">Le lecteur officiel occupe cette zone sur mobile.</p><div className="mt-3 h-1.5 rounded-full bg-white/15"><div className="h-full w-2/5 rounded-full bg-white/70" /></div></div>
             <div className="mt-3 rounded-control bg-lime/35 p-3"><ProgressBar value={100} tone="success" label="Écoute validée" detail="10 s" /><p className="mt-2 flex items-center gap-1 text-xs font-bold text-success"><Icon name="check" className="size-3.5" /> Feedback déverrouillé</p></div>
             <TextareaField id="mobile-feedback" label="Ton avis" className="mt-3 min-h-24" placeholder="Qu’as-tu ressenti ?" count={0} maxLength={500} />
             <Button className="mt-3 w-full" icon="message">Envoyer mon avis</Button>
@@ -717,11 +721,11 @@ export function DesignSystemGallery() {
               <p className="mt-7 max-w-2xl text-lg leading-8 text-muted sm:text-xl">Un système visuel chaleureux et humain pour une plateforme où les artistes et les auditeurs avancent ensemble.</p>
             </div>
             <div className="relative hidden lg:block">
-              <div className="paper-note ml-auto w-72 bg-lime p-6 font-marker text-2xl leading-tight text-ink">Good music.<br />Brighter people. :)</div>
+              <div className="paper-note ml-auto w-72 bg-lime p-6 font-marker text-2xl leading-tight text-on-accent">Good music.<br />Brighter people. :)</div>
               <DoodleStar className="absolute -bottom-12 -left-5 size-20 -rotate-12 text-coral" />
             </div>
           </div>
-          <div className="mt-14 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-ink pt-5 text-xs font-bold uppercase tracking-[0.16em] text-ink"><span>Simple & lisible</span><span className="text-coral">●</span><span>Communautaire</span><span className="text-lime-strong">●</span><span>Gamifié avec mesure</span><span className="text-blue-strong">●</span><span>Spotify au centre</span></div>
+          <div className="mt-14 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-strong pt-5 text-xs font-bold uppercase tracking-[0.16em] text-ink"><span>Simple & lisible</span><span className="text-coral">●</span><span>Communautaire</span><span className="text-lime-strong">●</span><span>Gamifié avec mesure</span><span className="text-blue-strong">●</span><span>Spotify au centre</span></div>
         </section>
 
         <div className="mx-auto max-w-[1440px] space-y-24 px-4 pb-24 sm:px-6 lg:px-8">
@@ -734,8 +738,8 @@ export function DesignSystemGallery() {
           <AssembliesSection />
         </div>
       </main>
-      <footer className="border-t border-ink bg-ink px-4 py-8 text-white sm:px-6">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-marker text-xl">ListenExchange — écouter autrement.</p><p className="mt-1 text-xs text-white/50">Design system de validation · aucune logique métier modifiée</p></div><p className="rounded-full bg-lime px-4 py-2 text-xs font-black text-ink">Musique aujourd’hui. Monde plus créatif demain. ♡</p></div>
+      <footer className="border-t border-strong bg-inverse-surface px-4 py-8 text-inverse-foreground sm:px-6">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-marker text-xl">ListenExchange — écouter autrement.</p><p className="mt-1 text-xs text-inverse-foreground/50">Design system de validation · aucune logique métier modifiée</p></div><p className="rounded-full bg-lime px-4 py-2 text-xs font-black text-on-accent">Musique aujourd’hui. Monde plus créatif demain. ♡</p></div>
       </footer>
     </div>
   );
