@@ -1,11 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/app/components/LogoutButton";
 import { createClient } from "@/app/lib/supabase/client";
 import { getUserProfile } from "@/app/actions/feedback";
+import {
+  CREDITS_UPDATED_EVENT,
+  type CreditsUpdatedDetail,
+} from "@/app/lib/credits-events";
+import {
+  AppSidebar,
+  BrandMark,
+  CreditPill,
+  MobileNav,
+  type NavigationItem,
+} from "@/app/components/ui/design-system";
 
 interface User {
   id: string;
@@ -14,7 +25,7 @@ interface User {
 
 export function Navbar() {
   const [user, setUser] = useState<User | null>(null);
-  const [credits, setCredits] = useState<number>(0);
+  const [credits, setCredits] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
 
@@ -27,25 +38,20 @@ export function Navbar() {
         } = await supabase.auth.getUser();
 
         if (authUser) {
-          setUser({
-            id: authUser.id,
-            email: authUser.email || "",
-          });
-
-          // Fetch user profile for credits
+          setUser({ id: authUser.id, email: authUser.email || "" });
           try {
             const profile = await getUserProfile();
             setCredits(profile?.credits ?? 0);
-          } catch (err) {
-            console.error("Error fetching profile:", err);
+          } catch (error) {
+            console.error("Error fetching profile:", error);
             setCredits(0);
           }
         } else {
           setUser(null);
           setCredits(0);
         }
-      } catch (err) {
-        console.error("Error checking auth:", err);
+      } catch (error) {
+        console.error("Error checking auth:", error);
         setUser(null);
         setCredits(0);
       } finally {
@@ -56,98 +62,133 @@ export function Navbar() {
     checkAuth();
   }, []);
 
-  const isActive = (href: string) => pathname === href;
+  useEffect(() => {
+    const handleCreditsUpdated = async (event: Event) => {
+      const { balance } =
+        (event as CustomEvent<CreditsUpdatedDetail>).detail ?? {};
 
-  const navLinks = [
-    { href: "/discover", label: "Discover" },
-    { href: "/submit", label: "Submit" },
+      if (typeof balance === "number") {
+        setCredits(balance);
+        return;
+      }
+
+      try {
+        const profile = await getUserProfile();
+        setCredits(profile?.credits ?? 0);
+      } catch (error) {
+        console.error("Error refreshing profile credits:", error);
+      }
+    };
+
+    window.addEventListener(CREDITS_UPDATED_EVENT, handleCreditsUpdated);
+
+    return () => {
+      window.removeEventListener(CREDITS_UPDATED_EVENT, handleCreditsUpdated);
+    };
+  }, []);
+
+  const items: NavigationItem[] = [
+    {
+      href: "/discover",
+      label: "Discover",
+      icon: "home",
+      active: pathname === "/discover",
+    },
+    {
+      href: "/submit",
+      label: "Submit a track",
+      icon: "upload",
+      active: pathname === "/submit",
+    },
+    ...(user
+      ? [
+          {
+            href: "/dashboard",
+            label: "Dashboard",
+            icon: "user" as const,
+            active: pathname === "/dashboard",
+          },
+        ]
+      : [
+          {
+            href: "/auth/login",
+            label: "Sign in",
+            icon: "user" as const,
+            active: pathname === "/auth/login",
+          },
+        ]),
   ];
 
-  const authenticatedLinks = [
-    ...navLinks,
-    { href: "/dashboard", label: "Dashboard" },
+  const mobileItems: NavigationItem[] = [
+    { href: "/", label: "Home", icon: "music", active: pathname === "/" },
+    ...items,
   ];
+
+  const footer = isLoading ? (
+    <div className="space-y-3 rounded-control border border-border bg-background p-3">
+      <div className="h-4 w-28 animate-pulse rounded bg-surface-muted" />
+      <div className="h-9 animate-pulse rounded-control bg-surface-muted" />
+    </div>
+  ) : user ? (
+    <div className="space-y-3 rounded-control border border-border bg-background p-3">
+      <CreditPill credits={credits} />
+      <div className="flex items-center gap-2 border-t border-border pt-3">
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-blue-soft text-xs font-black text-ink">
+          {user.email[0]?.toUpperCase() || "U"}
+        </span>
+        <p className="min-w-0 flex-1 truncate text-xs font-semibold text-ink">
+          {user.email.split("@")[0]}
+        </p>
+      </div>
+      <LogoutButton variant="ghost" className="w-full" />
+    </div>
+  ) : (
+    <div className="rounded-control border border-border bg-background p-3">
+      <p className="text-xs font-bold text-ink">Join the exchange</p>
+      <p className="mt-1 text-xs leading-5 text-muted">
+        Sign in to earn and allocate credits.
+      </p>
+      <Link
+        href="/auth/signup"
+        className="mt-3 inline-flex text-xs font-bold text-coral-strong hover:underline"
+      >
+        Create an account →
+      </Link>
+    </div>
+  );
 
   return (
-    <nav className="border-b border-gray-700 sticky top-0 z-50 bg-gray-900/95 backdrop-blur">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center justify-between gap-6">
-          {/* Logo */}
-          <Link href="/" className="flex-shrink-0">
-            <h1 className="text-2xl sm:text-3xl font-bold hover:text-green-400 transition-colors">
-              ListenExchange
-            </h1>
-          </Link>
-
-          {/* Navigation Links */}
-          <nav className="hidden md:flex gap-6">
-            {(user ? authenticatedLinks : navLinks).map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`transition-colors ${
-                  isActive(link.href)
-                    ? "text-green-400 font-semibold"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right Section: Credits + Auth */}
-          <div className="flex items-center gap-4">
-            {isLoading ? (
-              <div className="h-8 w-32 bg-gray-700 rounded animate-pulse" />
-            ) : user ? (
-              <>
-                {/* Credits Display */}
-                <div className="hidden sm:flex items-center gap-2 bg-green-500/20 border border-green-500/50 rounded-full px-4 py-2">
-                  <span className="text-sm font-medium">🌟</span>
-                  <span className="text-sm font-medium">{credits} credits</span>
-                </div>
-
-                {/* Logout Button */}
-                <LogoutButton variant="secondary" size="sm" />
-              </>
-            ) : (
-              <>
-                {/* Login Button */}
-                <Link href="/auth/login">
-                  <button className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">
-                    Sign In
-                  </button>
-                </Link>
-
-                {/* Sign Up Button */}
-                <Link href="/auth/signup">
-                  <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
-                    Sign Up
-                  </button>
-                </Link>
-              </>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button className="md:hidden text-gray-400 hover:text-white">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-        </div>
+    <>
+      <div className="fixed inset-y-0 left-0 z-40 hidden lg:block">
+        <AppSidebar items={items} footer={footer} />
       </div>
-    </nav>
+
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background/92 px-4 py-3 backdrop-blur-xl lg:hidden">
+        <Link href="/" aria-label="ListenExchange home">
+          <BrandMark />
+        </Link>
+        {isLoading ? (
+          <span className="h-8 w-24 animate-pulse rounded-full bg-surface-muted" />
+        ) : user ? (
+          <div className="flex items-center gap-2">
+            <CreditPill credits={credits} />
+            <span className="grid size-9 place-items-center rounded-full border border-ink bg-blue-soft text-sm font-black text-ink">
+              {user.email[0]?.toUpperCase() || "U"}
+            </span>
+          </div>
+        ) : (
+          <Link
+            href="/auth/signup"
+            className="rounded-full border border-ink bg-lime px-3 py-2 text-xs font-black text-ink"
+          >
+            Join
+          </Link>
+        )}
+      </header>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-xl lg:hidden">
+        <MobileNav items={mobileItems.slice(0, 4)} />
+      </div>
+    </>
   );
 }

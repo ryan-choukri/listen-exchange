@@ -10,6 +10,9 @@ export interface SpotifyOEmbedResponse {
   html: string;
   width: number;
   height: number;
+  trackId?: string;
+  spotifyUrl?: string;
+  embedUrl?: string;
 }
 
 // Track data for our app

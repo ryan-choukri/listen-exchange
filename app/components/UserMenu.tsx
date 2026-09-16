@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signOut } from "@/app/actions/auth";
-import { Button } from "./Button";
+import { LinkButton } from "./Button";
+import { Icon } from "./ui/design-system";
 
 interface UserMenuProps {
   user: {
@@ -17,14 +18,12 @@ export function UserMenu({ user }: UserMenuProps) {
   if (!user) {
     return (
       <div className="flex gap-3">
-        <Link href="/auth/login">
-          <Button variant="secondary" size="sm">
-            Sign In
-          </Button>
-        </Link>
-        <Link href="/auth/signup">
-          <Button size="sm">Sign Up</Button>
-        </Link>
+        <LinkButton href="/auth/login" variant="ghost" size="sm">
+          Sign In
+        </LinkButton>
+        <LinkButton href="/auth/signup" size="sm">
+          Sign Up
+        </LinkButton>
       </div>
     );
   }
@@ -33,31 +32,44 @@ export function UserMenu({ user }: UserMenuProps) {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 hover:border-green-500 transition-colors"
+        className="flex items-center gap-2 rounded-control border border-border bg-surface px-3 py-2 text-ink transition-colors hover:border-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-strong"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-sm font-semibold">
+        <div className="flex size-8 items-center justify-center rounded-full border border-ink bg-blue-soft text-sm font-black text-ink">
           {user.email?.[0].toUpperCase() || "U"}
         </div>
-        <span className="text-sm text-gray-300 hidden sm:inline">
-          {user.email}
+        <span className="hidden max-w-40 truncate text-sm font-semibold text-ink sm:inline">
+          {user.email?.split("@")[0]}
         </span>
+        <Icon
+          name="arrow-right"
+          className={`size-3.5 transition-transform ${isOpen ? "rotate-90" : ""}`}
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg border border-gray-700 shadow-lg z-50">
+        <div
+          className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-control border border-border bg-surface p-1 shadow-card"
+          role="menu"
+        >
           <Link
             href="/dashboard"
-            className="block px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-t-lg"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-muted hover:text-ink"
             onClick={() => setIsOpen(false)}
+            role="menuitem"
           >
+            <Icon name="user" className="size-4" />
             Dashboard
           </Link>
           <form action={signOut} className="w-full">
             <button
               type="submit"
-              className="w-full text-left px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-b-lg"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-muted hover:bg-surface-muted hover:text-ink"
               onClick={() => setIsOpen(false)}
+              role="menuitem"
             >
+              <Icon name="arrow-left" className="size-4" />
               Sign Out
             </button>
           </form>

@@ -1,20 +1,58 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #f8f5ee;
+  --foreground: #1f1f1f;
+  --surface: #fffdf8;
+  --surface-muted: #f0eee7;
+  --ink: #1f1f1f;
+  --muted: #6f716e;
+  --coral: #ff6b4a;
+  --coral-strong: #e85034;
+  --lime: #c6f65b;
+  --lime-strong: #9fd83d;
+  --blue-soft: #9bc8f2;
+  --blue-strong: #3976a8;
+  --border: #d8d5ce;
+  --success: #3d7c59;
+  --danger: #c84c42;
+  --warning: #e7a42d;
+  --spotify-surface: #171717;
+  --art-coral-soft: #ff987f;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
   --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-coral: var(--coral);
+  --color-coral-strong: var(--coral-strong);
+  --color-lime: var(--lime);
+  --color-lime-strong: var(--lime-strong);
+  --color-blue-soft: var(--blue-soft);
+  --color-blue-strong: var(--blue-strong);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-spotify-surface: var(--spotify-surface);
+  --color-art-coral-soft: var(--art-coral-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-geist-sans);
+  --font-marker: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
+  --radius-card: 1rem;
+  --radius-control: 0.75rem;
+  --shadow-card: 0 10px 30px rgba(31, 31, 31, 0.08);
+  --shadow-raised: 3px 3px 0 rgba(31, 31, 31, 0.9);
 }
 
-* {
-  margin: 0;
-  padding: 0;
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -33,10 +71,53 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Shared paper canvas used by the application and its living design-system route. */
+.design-system,
+.paper-canvas {
+  color-scheme: light;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(circle at 18% 12%, rgba(255, 107, 74, 0.07), transparent 20rem),
+    radial-gradient(circle at 88% 28%, rgba(155, 200, 242, 0.12), transparent 24rem),
+    linear-gradient(rgba(31, 31, 31, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 31, 31, 0.018) 1px, transparent 1px);
+  background-size: auto, auto, 24px 24px, 24px 24px;
+}
+
+.design-system iframe[src*="spotify.com"] {
+  margin: 0;
+  border-radius: 0.75rem !important;
+}
+
+.marker-underline {
+  position: relative;
+  z-index: 0;
+  display: inline-block;
+}
+
+.marker-underline::after {
+  position: absolute;
+  right: -0.08em;
+  bottom: 0.04em;
+  left: -0.08em;
+  z-index: -1;
+  height: 0.32em;
+  content: "";
+  background: var(--coral);
+  border-radius: 999px 45% 999px 30%;
+  opacity: 0.85;
+  transform: rotate(-1deg);
+}
+
+.paper-note {
+  box-shadow: 2px 4px 10px rgba(31, 31, 31, 0.13);
+  transform: rotate(-1.2deg);
+}
+
 /* Spotify Embed Styles */
 iframe[src*="spotify.com"] {
   border-radius: 12px !important;
-  margin: 1rem 0;
+  margin: 0;
 }
 
 /* Scrollbar Styling */
@@ -46,14 +127,14 @@ iframe[src*="spotify.com"] {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(31, 31, 31, 0.04);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(31, 31, 31, 0.22);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(31, 31, 31, 0.34);
 }

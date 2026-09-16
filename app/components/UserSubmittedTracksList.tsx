@@ -6,6 +6,15 @@ import {
   deleteSubmittedTrack,
 } from "@/app/actions/submit";
 import { CreditAllocationModal } from "./CreditAllocationModal";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  LinkButton,
+  Notice,
+  StatusBadge,
+  Surface,
+} from "@/app/components/ui/design-system";
 
 interface SubmittedTrack {
   id: string;
@@ -93,106 +102,107 @@ export function UserSubmittedTracksList({
 
   if (isLoading) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-        <p className="text-gray-400">Loading your tracks...</p>
-      </div>
+      <Surface className="space-y-4 p-5 sm:p-6">
+        <div className="h-5 w-48 animate-pulse rounded bg-surface-muted" />
+        {[0, 1].map((item) => (
+          <div key={item} className="flex items-center gap-4 border-t border-border pt-4">
+            <div className="size-12 animate-pulse rounded-control bg-surface-muted" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-2/3 animate-pulse rounded bg-surface-muted" />
+              <div className="h-3 w-24 animate-pulse rounded bg-surface-muted" />
+            </div>
+          </div>
+        ))}
+      </Surface>
     );
   }
 
   if (tracks.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 text-center">
-        <p className="text-gray-400">No tracks submitted yet</p>
-        <p className="text-sm text-gray-500 mt-2">
-          Submit your first track to get started!
-        </p>
-      </div>
+      <EmptyState
+        icon="upload"
+        title="No tracks submitted yet"
+        description="Submit your first track to start collecting feedback from the community."
+        className="min-h-56"
+        action={
+          <LinkButton href="/submit" size="sm" icon="upload">
+            Submit a track
+          </LinkButton>
+        }
+      />
     );
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-700 bg-gray-900">
-        <h3 className="text-lg font-semibold">
+    <Surface className="overflow-hidden">
+      <div className="border-b border-border bg-surface-muted/55 px-5 py-4 sm:px-6">
+        <h3 className="text-lg font-black text-ink">
           Your Submitted Tracks ({tracks.length})
         </h3>
       </div>
 
-      {/* Error Message */}
       {deleteError && (
-        <div className="mx-6 mt-4 p-3 bg-red-500/20 border border-red-500 rounded-lg">
-          <p className="text-red-300 text-sm">{deleteError}</p>
+        <div className="mx-5 mt-4 sm:mx-6">
+          <Notice tone="danger" title="Track could not be deleted">
+            {deleteError}
+          </Notice>
         </div>
       )}
 
-      {/* Tracks List */}
-      <div className="divide-y divide-gray-700">
+      <div className="divide-y divide-border">
         {tracks.map((track) => (
           <div
             key={track.id}
-            className="px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:bg-gray-700/30 transition-colors"
+            className="flex flex-col items-stretch gap-4 px-5 py-4 transition-colors hover:bg-surface-muted/35 sm:flex-row sm:items-center sm:px-6"
           >
-            {/* Top Row: Cover + Info */}
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-              {/* Cover Image */}
-              <div className="flex-shrink-0">
-                <img
-                  src={track.cover_url}
-                  alt={track.title}
-                  className="w-12 h-12 rounded object-cover"
-                />
-              </div>
+            <div className="flex min-w-0 flex-1 items-center gap-4">
+              {/* Cover images come from the submitted Spotify track. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={track.cover_url}
+                alt={track.title}
+                className="size-12 shrink-0 rounded-control border border-border object-cover"
+              />
 
-              {/* Track Info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-medium truncate">{track.title}</p>
-                <p className="text-gray-400 text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-bold text-ink">{track.title}</p>
+                <p className="mt-1 text-xs text-muted">
                   {new Date(track.created_at).toLocaleDateString()}
                 </p>
               </div>
             </div>
 
-            {/* Credits and Status Badge */}
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* Status Badge */}
-              {track.status === "active" ? (
-                <span className="px-2 py-1 bg-green-500/20 border border-green-500 rounded text-green-300 text-xs font-medium">
-                  Active
-                </span>
-              ) : (
-                <span className="px-2 py-1 bg-gray-500/20 border border-gray-500 rounded text-gray-300 text-xs font-medium">
-                  Pending
-                </span>
-              )}
-
-              {/* Credits Display */}
-              <span className="px-3 py-1 bg-blue-500/20 border border-blue-500 rounded text-blue-300 text-xs font-medium whitespace-nowrap">
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <StatusBadge
+                status={track.status === "active" ? "active" : "pending"}
+              />
+              <Badge tone="blue" className="whitespace-nowrap">
                 {track.credits_remaining} credits
-              </span>
-
-              {/* Action Buttons */}
+              </Badge>
               <div className="flex gap-2">
-                <button
+                <Button
                   onClick={() => handleAllocateClick(track)}
-                  className="px-3 py-2 bg-green-600 hover:bg-green-700 border border-green-600 rounded text-white text-sm font-medium transition-colors"
+                  variant="secondary"
+                  size="sm"
+                  icon="wallet"
                 >
                   Allocate
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => handleDelete(track.id, track.title)}
-                  disabled={deletingId === track.id}
-                  className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded text-red-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  loading={deletingId === track.id}
+                  variant="danger"
+                  size="sm"
+                  icon="close"
                 >
-                  {deletingId === track.id ? "Deleting..." : "Delete"}
-                </button>
+                  Delete
+                </Button>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Credit Allocation Modal */}
       {selectedTrack && (
         <CreditAllocationModal
           trackId={selectedTrack.id}
@@ -204,6 +214,6 @@ export function UserSubmittedTracksList({
           onSuccess={handleAllocationSuccess}
         />
       )}
-    </div>
+    </Surface>
   );
 }

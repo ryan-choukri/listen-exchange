@@ -2,12 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { signOut } from "@/app/actions/auth";
-import { Button } from "@/app/components/Button";
+import { Button, type ButtonProps } from "@/app/components/Button";
 import { useState } from "react";
 
 interface LogoutButtonProps {
-  variant?: "primary" | "secondary";
-  size?: "sm" | "md" | "lg";
+  variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
   className?: string;
 }
 
@@ -44,7 +44,7 @@ export function LogoutButton({
         variant={variant}
         size={size}
         className={className}
-        disabled={isLoading}
+        loading={isLoading}
       >
         {isLoading ? "Signing out..." : "Sign Out"}
       </Button>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getUserSubmittedTracksCount } from "@/app/actions/submit";
+import { Icon, Surface } from "@/app/components/ui/design-system";
 
 export function UserTracksStats() {
   const [count, setCount] = useState(0);
@@ -19,14 +20,16 @@ export function UserTracksStats() {
   }, []);
 
   return (
-    <div className="bg-gradient-to-r from-blue-500/20 to-green-500/20 border border-blue-500/50 rounded-lg p-4">
+    <Surface className="p-4 shadow-none">
       <div className="flex items-center gap-3">
-        <div className="text-3xl">🎵</div>
+        <span className="grid size-10 place-items-center rounded-full bg-blue-soft/40 text-blue-strong">
+          <Icon name="music" />
+        </span>
         <div>
-          <p className="text-sm text-gray-400">Tracks You've Submitted</p>
-          <p className="text-2xl font-bold">{isLoading ? "..." : count}</p>
+          <p className="text-sm text-muted">Tracks You&apos;ve Submitted</p>
+          <p className="text-2xl font-black text-ink">{isLoading ? "..." : count}</p>
         </div>
       </div>
-    </div>
+    </Surface>
   );
 }

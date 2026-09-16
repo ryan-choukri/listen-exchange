@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { Button } from "@/app/components/Button";
 import { Input } from "@/app/components/Input";
-import { Navbar } from "@/app/components/Navbar";
+import { AppShell } from "@/app/components/AppShell";
+import { PageHeader } from "@/app/components/PageHeader";
+import {
+  Icon,
+  Notice,
+  Surface,
+} from "@/app/components/ui/design-system";
 import { SpotifyOEmbedResponse } from "@/app/types/spotify";
 import { submitTrack } from "@/app/actions/submit";
 import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
@@ -73,13 +79,20 @@ export default function SubmitPage() {
   const handleAddTrack = async () => {
     if (!oembedData) return;
 
+    const previewUrl = oembedData.spotifyUrl;
+
+    if (!previewUrl) {
+      setError("The loaded track preview is missing its Spotify URL");
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
     setSuccess(false);
 
     try {
       const result = await submitTrack(
-        url,
+        previewUrl,
         oembedData.title,
         oembedData.thumbnail_url,
       );
@@ -114,156 +127,147 @@ export default function SubmitPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
-      {/* Navbar */}
-      <Navbar />
+    <AppShell width="medium">
+      <div className="space-y-8">
+        <PageHeader
+          eyebrow="For artists & curators"
+          title="Submit Your Track"
+          description="Share an independent track for the community to discover and review."
+        />
 
-      {/* Main Content */}
-      <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="space-y-8">
-          {/* Title */}
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Submit Your Track</h1>
-            <p className="text-gray-400">
-              Share an independent track for the community to discover and
-              review.
-            </p>
+        {success && (
+          <div className="fixed bottom-24 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm lg:bottom-6 lg:right-6">
+            <Notice tone="success" title="Track Submitted!">
+              Your track has been added to the discovery queue.
+            </Notice>
+          </div>
+        )}
+
+        <Surface className="p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-coral/20 text-coral-strong">
+              <Icon name="spotify" />
+            </span>
+            <div>
+              <h2 className="text-lg font-black text-ink">Paste Spotify URL</h2>
+              <p className="mt-1 text-sm text-muted">
+                Find a track on Spotify and copy its direct share link.
+              </p>
+            </div>
           </div>
 
-          {/* User Stats Card */}
-          {/* <UserTracksStats key={refreshKey} /> */}
+          <div className="mt-5 space-y-3">
+            <Input
+              label="Spotify track URL"
+              placeholder="https://open.spotify.com/track/..."
+              value={url}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setError("");
+              }}
+              onKeyPress={handleKeyPress}
+            />
 
-          {/* User Submitted Tracks List */}
+            {error && !oembedData && (
+              <Notice tone="danger" title="Track could not be fetched">
+                {error}
+              </Notice>
+            )}
+
+            <Button
+              onClick={handleFetchOembed}
+              loading={isLoading}
+              icon="search"
+              className="w-full sm:w-auto"
+            >
+              Fetch Track Info
+            </Button>
+          </div>
+        </Surface>
+
+        {oembedData && (
+          <Surface className="overflow-hidden">
+            <div className="border-b border-border bg-surface-muted/55 p-5 sm:p-6">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-coral-strong">
+                Preview
+              </p>
+              <div className="mt-3 flex items-center gap-4">
+                {/* Spotify thumbnails are supplied dynamically by the oEmbed response. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={oembedData.thumbnail_url}
+                  alt={oembedData.title}
+                  className="size-16 shrink-0 rounded-control border border-border object-cover"
+                />
+                <div className="min-w-0">
+                  <h2 className="truncate text-xl font-black text-ink">
+                    {oembedData.title}
+                  </h2>
+                  <p className="mt-1 text-sm text-muted">
+                    {oembedData.provider_name}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-5 p-5 sm:p-6">
+              <div
+                className="overflow-hidden rounded-card border border-ink/15 bg-spotify-surface p-2"
+                dangerouslySetInnerHTML={{ __html: oembedData.html }}
+              />
+
+              {error && (
+                <Notice tone="danger" title="Track could not be submitted">
+                  {error}
+                </Notice>
+              )}
+
+              {success && (
+                <Notice tone="success" title="Track submitted successfully">
+                  It is now available in Discovery.
+                </Notice>
+              )}
+
+              <Button
+                onClick={handleAddTrack}
+                loading={isSubmitting}
+                icon="upload"
+                className="w-full"
+              >
+                Add This Track
+              </Button>
+
+              <p className="text-center text-xs text-muted">
+                Adding: {oembedData.spotifyUrl}
+              </p>
+
+              <p className="text-center text-xs leading-5 text-muted">
+                The track will be added to the discovery queue for other users
+                to listen to and review.
+              </p>
+            </div>
+          </Surface>
+        )}
+
+        <Notice tone="info" title="Tips">
+          <ul className="space-y-1">
+            <li>• Share original or curated independent tracks</li>
+            <li>• Make sure the Spotify link is a direct track link</li>
+            <li>• Tracks will appear in the discovery queue</li>
+          </ul>
+        </Notice>
+
+        <section aria-labelledby="submitted-tracks-heading">
+          <h2 id="submitted-tracks-heading" className="mb-4 text-xl font-black text-ink">
+            Your releases
+          </h2>
           <UserSubmittedTracksList
             key={refreshKey}
             refreshKey={refreshKey}
             onTrackDeleted={handleTrackDeleted}
           />
-
-          {/* Success Tooltip */}
-          {success && (
-            <div className="fixed bottom-6 right-6 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 animate-pulse">
-              <span className="text-xl">✅</span>
-              <div>
-                <p className="font-semibold">Track Submitted!</p>
-                <p className="text-sm text-green-100">
-                  Your track has been added to the discovery queue.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* URL Input Section */}
-          <div className="bg-gray-800 rounded-lg p-6 space-y-4">
-            <h2 className="text-lg font-semibold">Paste Spotify URL</h2>
-            <p className="text-sm text-gray-400">
-              Find a track on Spotify and copy the share link
-            </p>
-
-            <div className="space-y-3">
-              <Input
-                placeholder="https://open.spotify.com/track/..."
-                value={url}
-                onChange={(e) => {
-                  setUrl(e.target.value);
-                  setError("");
-                }}
-                onKeyPress={handleKeyPress}
-                className="text-white placeholder-gray-600 border-gray-600 focus:border-green-500"
-              />
-
-              {error && (
-                <div className="p-3 bg-red-500/20 border border-red-500 rounded-lg">
-                  <p className="text-red-300 text-sm">{error}</p>
-                </div>
-              )}
-
-              <Button
-                onClick={handleFetchOembed}
-                disabled={isLoading}
-                size="md"
-                className="w-full"
-              >
-                {isLoading ? "Loading..." : "Fetch Track Info"}
-              </Button>
-            </div>
-          </div>
-
-          {/* Track Preview Section */}
-          {oembedData && (
-            <div className="bg-gray-800 rounded-lg p-6 space-y-4">
-              <h2 className="text-lg font-semibold">Preview</h2>
-
-              {/* Cover & Title */}
-              <div className="space-y-3">
-                <div className="w-full bg-gray-700 aspect-square rounded-lg overflow-hidden">
-                  <img
-                    src={oembedData.thumbnail_url}
-                    alt={oembedData.title}
-                    className="w-[50px] h-[50px] object-cover"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold">{oembedData.title}</h3>
-                  <p className="text-sm text-gray-400 mt-1">
-                    {oembedData.provider_name}
-                  </p>
-                </div>
-              </div>
-
-              {/* Spotify Embed */}
-              <div
-                className="my-4"
-                dangerouslySetInnerHTML={{ __html: oembedData.html }}
-              />
-
-              {/* Error Message */}
-              {error && (
-                <div className="p-3 bg-red-500/20 border border-red-500 rounded-lg">
-                  <p className="text-red-300 text-sm">{error}</p>
-                </div>
-              )}
-
-              {/* Success Message */}
-              {success && (
-                <div className="p-3 bg-green-500/20 border border-green-500 rounded-lg">
-                  <p className="text-green-300 text-sm font-medium">
-                    ✓ Track submitted successfully! It's now available in
-                    Discovery.
-                  </p>
-                </div>
-              )}
-
-              {/* Action Button */}
-              <Button
-                onClick={handleAddTrack}
-                disabled={isSubmitting}
-                size="md"
-                className="w-full"
-              >
-                {isSubmitting ? "Submitting..." : "Add This Track"}
-              </Button>
-
-              <p className="text-xs text-gray-500 text-center">
-                Track will be added to the discovery queue for other users to
-                listen and review.
-              </p>
-            </div>
-          )}
-
-          {/* Info Box */}
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 space-y-2">
-            <p className="text-sm text-blue-300">
-              <span className="font-semibold">💡 Tips:</span>
-            </p>
-            <ul className="text-sm text-blue-300/80 space-y-1 ml-4">
-              <li>• Share original or curated independent tracks</li>
-              <li>• Make sure the Spotify link is a direct track link</li>
-              <li>• Tracks will appear in the discovery queue</li>
-            </ul>
-          </div>
-        </div>
+        </section>
       </div>
-    </div>
+    </AppShell>
   );
 }
