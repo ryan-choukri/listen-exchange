@@ -5,11 +5,7 @@ import { Button } from "@/app/components/Button";
 import { Input } from "@/app/components/Input";
 import { AppShell } from "@/app/components/AppShell";
 import { PageHeader } from "@/app/components/PageHeader";
-import {
-  Icon,
-  Notice,
-  Surface,
-} from "@/app/components/ui/design-system";
+import { Icon, Notice, Surface } from "@/app/components/ui/design-system";
 import { SpotifyOEmbedResponse } from "@/app/types/spotify";
 import { submitTrack } from "@/app/actions/submit";
 import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
@@ -258,7 +254,10 @@ export default function SubmitPage() {
         </Notice>
 
         <section aria-labelledby="submitted-tracks-heading">
-          <h2 id="submitted-tracks-heading" className="mb-4 text-xl font-black text-ink">
+          <h2
+            id="submitted-tracks-heading"
+            className="mb-4 text-xl font-black text-ink"
+          >
             Your releases
           </h2>
           <UserSubmittedTracksList
