@@ -101,7 +101,7 @@ function Header() {
     ["Composants", "#composants"],
     ["Navigation", "#navigation"],
     ["Écoute", "#ecoute"],
-    ["Listens", "#credits"],
+    ["Credits", "#credits"],
     ["Assemblages", "#assemblages"],
   ];
 
@@ -367,7 +367,7 @@ function NavigationSection() {
                   <p className="text-sm font-black text-ink">Bonjour, Mia</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CreditPill credits={50} label="listens" />
+                  <CreditPill credits={50} label="credits" />
                   <div className="grid size-9 place-items-center rounded-full border border-strong bg-blue-soft text-sm font-black text-on-accent">M</div>
                 </div>
               </div>
@@ -407,7 +407,7 @@ function NavigationSection() {
             <div className="min-h-[455px] px-4 py-5">
               <div className="flex items-center justify-between">
                 <div><p className="text-xs font-bold text-coral-strong">POUR TOI</p><h3 className="text-2xl font-black text-ink">À écouter</h3></div>
-                <CreditPill credits={12} label="listens" />
+                <CreditPill credits={12} label="credits" />
               </div>
               <div className="mt-5 rounded-card border border-border bg-surface p-3 shadow-card">
                 <div className="flex items-center gap-3">
@@ -547,7 +547,7 @@ function AllocationModal({ onClose }: { onClose: () => void }) {
           <div className="rounded-control border border-border bg-background p-3"><p className="text-xs text-muted">Sur ce titre</p><p className="mt-1 text-2xl font-black text-ink">{trackCredits}</p></div>
         </div>
         <div className="mt-5">
-          <label htmlFor="credit-amount" className="text-sm font-bold text-ink">Listens à {mode === "add" ? "ajouter" : "retourner"}</label>
+          <label htmlFor="credit-amount" className="text-sm font-bold text-ink">Crédits à {mode === "add" ? "ajouter" : "retourner"}</label>
           <div className="mt-2 flex items-center gap-2">
             <Button size="icon" variant="outline" icon="minus" onClick={() => setAmount(Math.max(1, amount - 1))}>Retirer un crédit</Button>
             <input id="credit-amount" type="number" min="1" value={amount} onChange={(event) => setAmount(Math.max(1, Number(event.target.value)))} className="min-w-0 flex-1 rounded-control border border-border bg-surface px-3 py-2.5 text-center text-lg font-black text-ink outline-none focus:border-blue-strong focus:ring-2 focus:ring-blue-soft" />
@@ -555,7 +555,7 @@ function AllocationModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         <div className="mt-5 rounded-control border border-blue-strong/20 bg-blue-soft/25 p-3 text-xs leading-5 text-blue-strong">
-          Après l’opération : <strong>{mode === "add" ? balance - amount : balance + amount} listens</strong> dans ton solde, <strong>{mode === "add" ? trackCredits + amount : Math.max(0, trackCredits - amount)} sur le titre</strong>.
+          Après l’opération : <strong>{mode === "add" ? balance - amount : balance + amount} crédits</strong> dans ton solde, <strong>{mode === "add" ? trackCredits + amount : Math.max(0, trackCredits - amount)} sur le titre</strong>.
         </div>
         <div className="mt-6 flex gap-3"><Button variant="outline" className="flex-1" onClick={onClose}>Annuler</Button><Button className="flex-1" onClick={onClose}>{mode === "add" ? "Allouer" : "Récupérer"} {amount}</Button></div>
     </Modal>
@@ -575,19 +575,19 @@ function CreditsSection() {
       <div className="grid gap-6 xl:grid-cols-3">
         <Surface className="overflow-hidden xl:col-span-2">
           <div className="flex flex-col gap-4 border-b border-border bg-lime/35 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-            <div className="flex items-center gap-4"><span className="grid size-12 place-items-center rounded-full border border-strong bg-warning text-on-accent shadow-raised"><Icon name="wallet" /></span><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Solde disponible</p><p className="text-3xl font-black text-ink">50 listens</p></div></div>
-            <Button icon="plus" onClick={() => setModalOpen(true)}>Allouer des listens</Button>
+            <div className="flex items-center gap-4"><span className="grid size-12 place-items-center rounded-full border border-strong bg-warning text-on-accent shadow-raised"><Icon name="wallet" /></span><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Solde disponible</p><p className="text-3xl font-black text-ink">50 crédits</p></div></div>
+            <Button icon="plus" onClick={() => setModalOpen(true)}>Allouer des crédits</Button>
           </div>
           <div className="p-5 sm:p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
               <AlbumArtwork size="md" />
-              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-black text-ink">Golden Hours</p><StatusBadge status="active" /></div><p className="mt-1 text-xs text-muted">8 listens attribués · jusqu’à 8 nouveaux retours</p><div className="mt-3"><ProgressBar value={32} tone="blue" /></div></div>
+              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-black text-ink">Golden Hours</p><StatusBadge status="active" /></div><p className="mt-1 text-xs text-muted">8 crédits attribués · jusqu’à 8 nouveaux retours</p><div className="mt-3"><ProgressBar value={32} tone="blue" /></div></div>
               <div className="flex gap-2"><Button size="icon" variant="outline" icon="minus" onClick={() => setModalOpen(true)}>Retirer des crédits</Button><Button size="icon" variant="secondary" icon="plus" onClick={() => setModalOpen(true)}>Ajouter des crédits</Button></div>
             </div>
             <div className="my-5 h-px bg-border" />
             <div className="flex flex-col gap-5 opacity-70 sm:flex-row sm:items-center">
               <AlbumArtwork title="After Midnight" size="md" />
-              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-black text-ink">After Midnight</p><StatusBadge status="pending" /></div><p className="mt-1 text-xs text-muted">0 listen · inactif dans la file d’écoute</p></div>
+              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-black text-ink">After Midnight</p><StatusBadge status="pending" /></div><p className="mt-1 text-xs text-muted">0 crédit · inactif dans la file d’écoute</p></div>
               <Button variant="outline" icon="plus" onClick={() => setModalOpen(true)}>Réactiver</Button>
             </div>
           </div>
@@ -649,7 +649,7 @@ function DesktopAssembly() {
       <div className="flex min-h-[660px]">
         <div className="hidden lg:block"><AppSidebar /></div>
         <div className="min-w-0 flex-1 bg-background">
-          <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6"><div><p className="text-xs font-bold text-muted">Découvrir</p><h3 className="font-black text-ink">Écoute du jour</h3></div><div className="flex items-center gap-3"><CreditPill credits={50} label="listens" /><span className="grid size-9 place-items-center rounded-full bg-blue-soft text-sm font-black text-on-accent">M</span></div></div>
+          <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6"><div><p className="text-xs font-bold text-muted">Découvrir</p><h3 className="font-black text-ink">Écoute du jour</h3></div><div className="flex items-center gap-3"><CreditPill credits={50} label="credits" /><span className="grid size-9 place-items-center rounded-full bg-blue-soft text-sm font-black text-on-accent">M</span></div></div>
           <div className="mx-auto max-w-3xl p-4 sm:p-6">
             <div className="mb-5 flex items-end justify-between gap-4"><div><Badge tone="coral">1 titre sur 3</Badge><h3 className="mt-3 text-3xl font-black tracking-tight text-ink">Prends dix secondes. Fais une différence.</h3></div><p className="hidden font-marker text-lg text-coral-strong sm:block">good vibes only ↓</p></div>
             <div className="rounded-card border border-border bg-surface p-4 shadow-card">
@@ -670,7 +670,7 @@ function MobileAssembly() {
   return (
     <div className="mx-auto w-full max-w-[370px] rounded-[2.35rem] border-[7px] border-strong bg-inverse-surface p-1 shadow-card">
       <div className="overflow-hidden rounded-[1.7rem] bg-background">
-        <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3"><BrandMark compact /><CreditPill credits={12} label="listens" /><Button size="icon" variant="ghost" icon="menu" className="size-9">Menu</Button></div>
+        <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3"><BrandMark compact /><CreditPill credits={12} label="credits" /><Button size="icon" variant="ghost" icon="menu" className="size-9">Menu</Button></div>
         <div className="p-4">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-coral-strong">Découvrir · 1/3</p>
           <h3 className="mt-1 text-2xl font-black tracking-tight text-ink">Dix secondes pour écouter.</h3>

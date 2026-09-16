@@ -14,6 +14,7 @@ export type IconName =
   | "arrow-left"
   | "arrow-right"
   | "check"
+  | "chevron-down"
   | "clock"
   | "close"
   | "headphones"
@@ -31,6 +32,7 @@ export type IconName =
   | "sparkle"
   | "spotify"
   | "trophy"
+  | "trash"
   | "upload"
   | "user"
   | "users"
@@ -54,6 +56,7 @@ export function Icon({
     "arrow-left": <path d="m15 18-6-6 6-6" />,
     "arrow-right": <path d="m9 18 6-6-6-6" />,
     check: <path d="m5 12 4 4L19 6" />,
+    "chevron-down": <path d="m6 9 6 6 6-6" />,
     clock: (
       <>
         <circle cx="12" cy="12" r="9" />
@@ -140,6 +143,14 @@ export function Icon({
         <path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v5M8 21h8M9 18h6" />
       </>
     ),
+    trash: (
+      <>
+        <path d="M4 7h16" />
+        <path d="M9 7V4h6v3" />
+        <path d="m6 7 1 14h10l1-14" />
+        <path d="M10 11v6M14 11v6" />
+      </>
+    ),
     upload: (
       <>
         <path d="M12 16V4" />
@@ -189,7 +200,13 @@ function joinClasses(...classes: Array<string | false | null | undefined>) {
 
 export interface ButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+  variant?:
+    | "primary"
+    | "secondary"
+    | "outline"
+    | "ghost"
+    | "danger"
+    | "danger-outline";
   size?: "sm" | "md" | "lg" | "icon";
   icon?: IconName;
   loading?: boolean;
@@ -209,6 +226,8 @@ const buttonVariants: Record<ButtonVariant, string> = {
     "border-transparent bg-transparent text-ink hover:bg-surface-muted active:bg-border",
   danger:
     "border-danger-solid bg-danger-solid text-on-danger hover:brightness-90 active:brightness-75",
+  "danger-outline":
+    "border-danger/55 bg-transparent text-danger hover:border-danger hover:bg-danger/10 active:bg-danger/15",
 };
 
 const buttonSizes: Record<ButtonSize, string> = {
@@ -587,7 +606,7 @@ export function ProgressBar({
 
 export function CreditPill({
   credits = 50,
-  label = "listens",
+  label = "credits",
 }: {
   credits?: number;
   label?: string;

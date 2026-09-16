@@ -100,7 +100,7 @@ export function FeedbackForm({
       )}
       {success && (
         <div className="mt-3">
-          <Notice tone="reward" title="Feedback submitted · +1 listen">
+          <Notice tone="reward" title="Feedback submitted · +1 credit">
             Thanks for helping this artist move forward.
           </Notice>
         </div>

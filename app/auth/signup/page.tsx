@@ -45,7 +45,7 @@ export default function SignUpPage() {
     <AuthShell
       eyebrow="Join the community"
       title="Create your account"
-      description="Listen with care, support artists, and earn listens for your own tracks."
+      description="Listen with care, support artists, and earn credits for your own tracks."
       footer={
         <p className="text-xs text-muted">
           By creating an account, you agree to our Terms of Service and Privacy Policy

@@ -105,7 +105,7 @@ export default async function Home() {
                   [
                     "trophy",
                     "Earn",
-                    "Earn listens for your own tracks",
+                    "Earn credits for your own tracks",
                   ],
                 ].map(([icon, title, description], index) => (
                   <div
@@ -137,7 +137,7 @@ export default async function Home() {
               </div>
             </Surface>
             <p className="absolute -bottom-10 right-2 rotate-2 rounded-control bg-lime px-4 py-3 font-marker text-base text-on-accent shadow-card">
-              1 listen = 1 artist pushed further.
+              1 credit = 1 artist pushed further.
             </p>
           </div>
         </section>

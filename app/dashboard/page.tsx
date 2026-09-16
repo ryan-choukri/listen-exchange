@@ -86,7 +86,7 @@ export default function DashboardPage() {
         <PageHeader
           eyebrow="Your space"
           title={`Welcome, ${user.email.split("@")[0]}`}
-          description="Manage your tracks, review their listen allocation, and keep the community exchange moving."
+          description="Manage your tracks, review their credit allocation, and keep the community exchange moving."
         />
 
         <UserSubmittedTracksList

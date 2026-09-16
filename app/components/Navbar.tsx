@@ -147,7 +147,7 @@ export function Navbar() {
     <div className="rounded-control border border-border bg-background p-3">
       <p className="text-xs font-bold text-ink">Join the exchange</p>
       <p className="mt-1 text-xs leading-5 text-muted">
-        Sign in to earn and allocate listens.
+        Sign in to earn and allocate credits.
       </p>
       <Link
         href="/auth/signup"

@@ -34,7 +34,7 @@ export function TrackHeader({
           ) : null}
           {typeof creditsRemaining === "number" && (
             <Badge tone="blue">
-              {creditsRemaining} {creditsRemaining === 1 ? "listen" : "listens"} left
+              {creditsRemaining} {creditsRemaining === 1 ? "credit" : "credits"} left
             </Badge>
           )}
         </div>

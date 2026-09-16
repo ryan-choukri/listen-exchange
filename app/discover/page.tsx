@@ -116,7 +116,7 @@ export default function DiscoverPage() {
         <PageHeader
           eyebrow="Community listening"
           title="Discover & Listen"
-          description="Give independent artists your full attention, share thoughtful feedback, and earn listens for your own releases."
+          description="Give independent artists your full attention, share thoughtful feedback, and earn credits for your own releases."
           aside={
             <Surface className="min-w-40 px-4 py-3 text-right shadow-none">
               <p className="text-xs font-bold uppercase tracking-wider text-muted">
@@ -214,7 +214,7 @@ export default function DiscoverPage() {
                           {item.feedback}
                         </p>
                         <p className="mt-2 text-xs font-semibold text-success">
-                          ✓ +1 listen earned •{" "}
+                          ✓ +1 credit earned •{" "}
                           {new Date(item.created_at).toLocaleDateString()}
                         </p>
                       </div>
@@ -228,8 +228,8 @@ export default function DiscoverPage() {
               <ol className="ml-4 list-decimal space-y-1">
                 <li>Listen to the track for 10 seconds of real play time</li>
                 <li>Share honest feedback (minimum 10 characters)</li>
-                <li>Earn 1 listen per submission</li>
-                <li>Use listens to support your own tracks</li>
+                <li>Earn 1 credit per submission</li>
+                <li>Use credits to support your own tracks</li>
               </ol>
             </Notice>
           </div>

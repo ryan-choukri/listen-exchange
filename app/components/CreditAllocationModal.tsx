@@ -62,7 +62,7 @@ export function CreditAllocationModal({
       if (mode === "allocate") {
         if (userBalance !== null && listenAmount > userBalance) {
           setError(
-            `Insufficient listens. You have ${userBalance} but need ${listenAmount}`,
+            `Insufficient credits. You have ${userBalance} but need ${listenAmount}`,
           );
           setIsLoading(false);
           return;
@@ -74,12 +74,12 @@ export function CreditAllocationModal({
           onSuccess();
           onClose();
         } else {
-          setError(result.message || "Failed to allocate listens");
+          setError(result.message || "Failed to allocate credits");
         }
       } else {
         if (listenAmount > currentCredits) {
           setError(
-            `Track has only ${currentCredits} listens but you want to remove ${listenAmount}`,
+            `Track has only ${currentCredits} credits but you want to remove ${listenAmount}`,
           );
           setIsLoading(false);
           return;
@@ -91,7 +91,7 @@ export function CreditAllocationModal({
           onSuccess();
           onClose();
         } else {
-          setError(result.message || "Failed to return listens");
+          setError(result.message || "Failed to return credits");
         }
       }
     } catch (submitError) {
@@ -120,7 +120,7 @@ export function CreditAllocationModal({
     <Modal
       open={isOpen}
       onClose={onClose}
-      title="Manage listens"
+      title="Manage credits"
       description={trackTitle}
     >
       <div className="grid grid-cols-2 rounded-control bg-surface-muted p-1">
@@ -160,14 +160,14 @@ export function CreditAllocationModal({
           </div>
         </div>
         <div className="rounded-control border border-border bg-background p-3">
-          <p className="text-xs text-muted">Listens remaining</p>
+          <p className="text-xs text-muted">Credits remaining</p>
           <p className="mt-1 text-2xl font-black text-ink">{currentCredits}</p>
         </div>
       </div>
 
       <div className="mt-4 rounded-control border border-blue-strong/20 bg-blue-soft/25 p-3">
         <p className="text-xs text-blue-strong">
-          {mode === "allocate" ? "Your available listens" : "Track listens available"}
+          {mode === "allocate" ? "Your available credits" : "Track credits available"}
         </p>
         <p className="mt-1 text-xl font-black text-ink">
           {mode === "allocate"
@@ -180,7 +180,7 @@ export function CreditAllocationModal({
 
       {error && (
         <div className="mt-4">
-          <Notice tone="danger" title="Listens could not be updated">
+          <Notice tone="danger" title="Credits could not be updated">
             {error}
           </Notice>
         </div>
@@ -189,7 +189,7 @@ export function CreditAllocationModal({
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         <div>
           <label htmlFor="amount" className="block text-sm font-bold text-ink">
-            Listens to {mode === "allocate" ? "allocate" : "return"}
+            Credits to {mode === "allocate" ? "allocate" : "return"}
           </label>
           <div className="mt-2 flex items-center gap-2">
             <input
@@ -225,7 +225,7 @@ export function CreditAllocationModal({
         {creditAmount > 0 && (
           <div className="rounded-control border border-border bg-background p-3 text-xs text-muted">
             <p className="flex justify-between gap-4">
-              <span>{mode === "allocate" ? "Your balance" : "Track listens"}</span>
+              <span>{mode === "allocate" ? "Your balance" : "Track credits"}</span>
               <strong className="text-ink">{sourceBalance ?? "…"}</strong>
             </p>
             <p className="mt-1 flex justify-between gap-4">
@@ -241,10 +241,10 @@ export function CreditAllocationModal({
           </div>
         )}
 
-        <Notice tone="info" title="How listens work">
+        <Notice tone="info" title="How credits work">
           {mode === "allocate"
-            ? "Allocating listens activates the track so listeners can earn one listen by giving feedback."
-            : "Returned listens go back to your balance. A track with zero listens becomes inactive."}
+            ? "Allocating credits activates the track so listeners can earn one credit by giving feedback."
+            : "Returned credits go back to your balance. A track with zero credits becomes inactive."}
         </Notice>
 
         <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row">

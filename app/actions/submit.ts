@@ -16,6 +16,53 @@ export interface DeleteSubmittedTrackResponse {
   alreadyRemoved?: boolean;
 }
 
+interface SubmittedTrackFeedback {
+  id: string;
+  feedback: string;
+  created_at: string;
+}
+
+interface UserSubmittedTrack {
+  id: string;
+  track_id: string;
+  title: string;
+  cover_url: string;
+  created_at: string;
+  credits_remaining: number;
+  status: string;
+  feedback_count: number;
+  feedbacks: SubmittedTrackFeedback[];
+}
+
+function parseSubmittedTrackFeedbacks(value: unknown): SubmittedTrackFeedback[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") {
+      return [];
+    }
+
+    const feedback = item as Record<string, unknown>;
+    if (
+      typeof feedback.id !== "string" ||
+      typeof feedback.feedback !== "string" ||
+      typeof feedback.created_at !== "string"
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        id: feedback.id,
+        feedback: feedback.feedback,
+        created_at: feedback.created_at,
+      },
+    ];
+  });
+}
+
 /**
  * Extract Spotify track ID from a Spotify URL
  * Supports formats:
@@ -37,15 +84,7 @@ function extractSpotifyTrackId(url: string): string | null {
  * @returns Array of submitted tracks with full details including credits
  */
 export async function getUserSubmittedTracks(): Promise<
-  Array<{
-    id: string;
-    track_id: string;
-    title: string;
-    cover_url: string;
-    created_at: string;
-    credits_remaining: number;
-    status: string;
-  }>
+  UserSubmittedTrack[]
 > {
   try {
     const supabase = await createClient();
@@ -58,21 +97,33 @@ export async function getUserSubmittedTracks(): Promise<
       return [];
     }
 
-    const { data, error } = await supabase
-      .from("submitted_tracks")
-      .select(
-        "id, track_id, title, cover_url, created_at, credits_remaining, status",
-      )
-      .eq("user_id", user.id)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.rpc(
+      "get_owner_submitted_tracks_with_feedbacks",
+    );
 
     if (error) {
       console.error("Error fetching user tracks:", error);
       return [];
     }
 
-    return data || [];
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data.map((item) => {
+      const track = item as Record<string, unknown>;
+      return {
+        id: String(track.id ?? ""),
+        track_id: String(track.track_id ?? ""),
+        title: String(track.title ?? ""),
+        cover_url: String(track.cover_url ?? ""),
+        created_at: String(track.created_at ?? ""),
+        credits_remaining: Number(track.credits_remaining ?? 0),
+        status: String(track.status ?? "pending"),
+        feedback_count: Number(track.feedback_count ?? 0),
+        feedbacks: parseSubmittedTrackFeedbacks(track.feedbacks),
+      };
+    });
   } catch (err) {
     console.error("Error getting user tracks:", err);
     return [];
@@ -298,7 +349,7 @@ export async function submitTrack(
 
     return {
       success: true,
-      message: "Track submitted. Allocate listens to add it to Discovery.",
+      message: "Track submitted. Allocate credits to add it to Discovery.",
       trackId,
     };
   } catch (err) {
