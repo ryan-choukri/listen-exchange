@@ -13,13 +13,15 @@ import {
   TextField,
 } from "@/app/components/ui/design-system";
 import { CONTACT_SUBJECTS } from "@/app/contact/contact-options";
+import { useCurrentUser } from "@/app/components/CurrentUserProvider";
 
 const INITIAL_STATE: ContactFormState = {
   success: false,
   message: "",
 };
 
-export function ContactForm({ initialEmail = "" }: { initialEmail?: string }) {
+export function ContactForm() {
+  const { user } = useCurrentUser();
   const [state, formAction, pending] = useActionState(
     submitContactMessage,
     INITIAL_STATE,
@@ -53,11 +55,12 @@ export function ContactForm({ initialEmail = "" }: { initialEmail?: string }) {
   return (
     <form action={formAction} className="space-y-5 p-5 sm:p-7">
       <TextField
+        key={user?.email ?? "anonymous"}
         id="contact-email"
         name="email"
         type="email"
         label="Email"
-        defaultValue={initialEmail}
+        defaultValue={user?.email ?? ""}
         placeholder="you@example.com"
         autoComplete="email"
         maxLength={320}

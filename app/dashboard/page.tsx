@@ -1,54 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { LinkButton } from "@/app/components/Button";
 import { AppShell } from "@/app/components/AppShell";
 import { AuthShell } from "@/app/components/AuthShell";
 import { PageHeader } from "@/app/components/PageHeader";
 import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
-import { createClient } from "@/app/lib/supabase/client";
+import { useCurrentUser } from "@/app/components/CurrentUserProvider";
 import { Icon, Surface } from "@/app/components/ui/design-system";
 
-interface User {
-  id: string;
-  email: string;
-  created_at: string;
-}
-
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading } = useCurrentUser();
   const [refreshKey, setRefreshKey] = useState(0);
-  const router = useRouter();
-
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        const supabase = await createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-          router.push("/auth/login");
-        } else {
-          setUser({
-            id: user.id,
-            email: user.email || "",
-            created_at: user.created_at || "",
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching user:", err);
-        router.push("/auth/login");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getUser();
-  }, [router]);
 
   const handleTrackDeleted = () => {
     // Increment refreshKey to reload both UserTracksStats and UserSubmittedTracksList
@@ -125,7 +88,7 @@ export default function DashboardPage() {
                   Account Created
                 </dt>
                 <dd className="mt-1 font-semibold text-ink">
-                  {new Date(user.created_at).toLocaleDateString()}
+                  {new Date(user.createdAt).toLocaleDateString()}
                 </dd>
               </div>
             </dl>

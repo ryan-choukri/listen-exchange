@@ -111,13 +111,3 @@ export async function updatePassword(
     message: "Password updated successfully.",
   };
 }
-
-export async function getUser() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  return user;
-}

@@ -3,9 +3,9 @@
 import { useState } from "react";
 import {
   allocateTracksCredits,
-  getUserCredits,
   removeTracksCredits,
 } from "@/app/actions/credits";
+import { useCurrentUser } from "@/app/components/CurrentUserProvider";
 import {
   Button,
   Modal,
@@ -37,14 +37,8 @@ export function CreditAllocationModal({
   const [amount, setAmount] = useState("1");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userBalance, setUserBalance] = useState<number | null>(null);
-
-  if (isOpen && userBalance === null && !isLoading) {
-    (async () => {
-      const balance = await getUserCredits();
-      setUserBalance(balance);
-    })();
-  }
+  const { user, isLoading: isUserLoading } = useCurrentUser();
+  const userBalance = user?.credits ?? null;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -96,7 +90,9 @@ export function CreditAllocationModal({
       }
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "An error occurred",
+        submitError instanceof Error
+          ? submitError.message
+          : "An error occurred",
       );
     } finally {
       setIsLoading(false);
@@ -167,11 +163,13 @@ export function CreditAllocationModal({
 
       <div className="mt-4 rounded-control border border-blue-strong/20 bg-blue-soft/25 p-3">
         <p className="text-xs text-blue-strong">
-          {mode === "allocate" ? "Your available credits" : "Track credits available"}
+          {mode === "allocate"
+            ? "Your available credits"
+            : "Track credits available"}
         </p>
         <p className="mt-1 text-xl font-black text-ink">
           {mode === "allocate"
-            ? userBalance !== null
+            ? userBalance !== null && !isUserLoading
               ? userBalance
               : "Loading…"
             : currentCredits}
@@ -198,7 +196,7 @@ export function CreditAllocationModal({
               min="1"
               max={
                 mode === "allocate"
-                  ? userBalance || 1000
+                  ? (userBalance ?? 0)
                   : currentCredits || 1000
               }
               value={amount}
@@ -225,11 +223,15 @@ export function CreditAllocationModal({
         {creditAmount > 0 && (
           <div className="rounded-control border border-border bg-background p-3 text-xs text-muted">
             <p className="flex justify-between gap-4">
-              <span>{mode === "allocate" ? "Your balance" : "Track credits"}</span>
+              <span>
+                {mode === "allocate" ? "Your balance" : "Track credits"}
+              </span>
               <strong className="text-ink">{sourceBalance ?? "…"}</strong>
             </p>
             <p className="mt-1 flex justify-between gap-4">
-              <span>{mode === "allocate" ? "Will allocate" : "Will return"}</span>
+              <span>
+                {mode === "allocate" ? "Will allocate" : "Will return"}
+              </span>
               <strong className="text-coral-strong">−{creditAmount}</strong>
             </p>
             <p className="mt-2 flex justify-between gap-4 border-t border-border pt-2">
@@ -262,6 +264,7 @@ export function CreditAllocationModal({
             disabled={isLoading || !canAfford || creditAmount <= 0}
             loading={isLoading}
             className="flex-1"
+            variant={mode === "allocate" ? "secondary" : "primary"}
           >
             {mode === "allocate" ? "Allocate" : "Return"}
           </Button>

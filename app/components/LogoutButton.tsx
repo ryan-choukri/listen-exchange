@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "@/app/actions/auth";
 import { Button, type ButtonProps } from "@/app/components/Button";
 import { useState } from "react";
+import { useCurrentUser } from "@/app/components/CurrentUserProvider";
 
 interface LogoutButtonProps {
   variant?: ButtonProps["variant"];
@@ -17,10 +18,12 @@ export function LogoutButton({
   className,
 }: LogoutButtonProps) {
   const router = useRouter();
+  const { clearUser } = useCurrentUser();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = async () => {
     setIsLoading(true);
+    clearUser();
     try {
       await signOut();
       // signOut redirects, but we add this as a safety fallback

@@ -899,7 +899,9 @@ export function AppSidebar({
             className={joinClasses(
               "flex items-center gap-3 rounded-control px-3 py-2.5 text-sm font-semibold transition",
               link.active
-                ? "bg-lime/45 text-ink"
+                ? link.href === "/dashboard"
+                  ? "bg-blue-strong/45 text-ink"
+                  : "bg-lime/45 text-ink"
                 : "text-muted hover:bg-surface-muted hover:text-ink",
             )}
           >

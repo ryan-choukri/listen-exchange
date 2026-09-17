@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/app/lib/supabase/server";
+import { getAuthenticatedClient } from "@/app/lib/auth/get-authenticated-client";
 
 export interface SubmitTrackResponse {
   success: boolean;
@@ -87,13 +87,9 @@ export async function getUserSubmittedTracks(): Promise<
   UserSubmittedTrack[]
 > {
   try {
-    const supabase = await createClient();
+    const { supabase, identity } = await getAuthenticatedClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    if (!identity) {
       return [];
     }
 
@@ -139,13 +135,9 @@ export async function deleteSubmittedTrack(
   trackId: string,
 ): Promise<DeleteSubmittedTrackResponse> {
   try {
-    const supabase = await createClient();
+    const { supabase, identity } = await getAuthenticatedClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    if (!identity) {
       return {
         success: false,
         message: "You must be logged in to remove a track",
@@ -201,20 +193,16 @@ export async function deleteSubmittedTrack(
  */
 export async function getUserSubmittedTracksCount(): Promise<number> {
   try {
-    const supabase = await createClient();
+    const { supabase, identity } = await getAuthenticatedClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    if (!identity) {
       return 0;
     }
 
     const { count, error } = await supabase
       .from("submitted_tracks")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
+      .eq("user_id", identity.id)
       .is("deleted_at", null);
 
     if (error) {
@@ -266,14 +254,9 @@ export async function submitTrack(
       };
     }
 
-    const supabase = await createClient();
+    const { supabase, identity } = await getAuthenticatedClient();
 
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    if (!identity) {
       return {
         success: false,
         message: "You must be logged in to submit a track",
@@ -284,7 +267,7 @@ export async function submitTrack(
     const { data: existing, error: existingError } = await supabase
       .from("submitted_tracks")
       .select("id, status, deleted_at")
-      .eq("user_id", user.id)
+      .eq("user_id", identity.id)
       .eq("track_id", trackId)
       .maybeSingle();
 
@@ -331,25 +314,40 @@ export async function submitTrack(
       };
     }
 
-    // Insert the track
-    const { error } = await supabase.from("submitted_tracks").insert({
-      user_id: user.id,
-      track_id: trackId,
-      title,
-      cover_url: coverUrl,
-    });
+    // Create through the database RPC so ownership and initial credit state
+    // cannot be supplied or overridden by the caller.
+    const { data: createdData, error: createdError } = await supabase.rpc(
+      "create_submitted_track",
+      {
+        p_track_id: trackId,
+        p_title: title,
+        p_cover_url: coverUrl,
+      },
+    );
 
-    if (error) {
-      console.error("Supabase error:", error);
+    if (createdError || !createdData?.length) {
+      console.error("Create track RPC error:", createdError);
       return {
         success: false,
         message: "Failed to submit track. Please try again.",
       };
     }
 
+    const created = createdData[0] as {
+      success: boolean;
+      message: string;
+    };
+
+    if (!created.success) {
+      return {
+        success: false,
+        message: created.message,
+      };
+    }
+
     return {
       success: true,
-      message: "Track submitted. Allocate credits to add it to Discovery.",
+      message: created.message,
       trackId,
     };
   } catch (err) {
@@ -378,12 +376,7 @@ export async function getSubmittedTracks(): Promise<
   }>
 > {
   try {
-    const supabase = await createClient();
-
-    // Get current user to exclude their own tracks
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { supabase, identity } = await getAuthenticatedClient();
 
     let query = supabase
       .from("submitted_tracks")
@@ -396,8 +389,8 @@ export async function getSubmittedTracks(): Promise<
       .order("created_at", { ascending: false });
 
     // If user is authenticated, exclude their own tracks
-    if (user) {
-      query = query.neq("user_id", user.id);
+    if (identity) {
+      query = query.neq("user_id", identity.id);
     }
 
     const { data, error } = await query;

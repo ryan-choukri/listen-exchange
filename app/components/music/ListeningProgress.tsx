@@ -28,7 +28,7 @@ export function ListeningProgress({
         tone={complete ? "success" : "coral"}
         label={
           requiredSeconds
-            ? `Listen for ${requiredSeconds} seconds &nbsp; (You need to be logged to Spotify) `
+            ? `Listen for ${requiredSeconds} seconds`
             : "Loading verification rules…"
         }
         detail={

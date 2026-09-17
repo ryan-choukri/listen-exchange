@@ -3,7 +3,6 @@ import { LinkButton } from "./components/Button";
 import { UserMenu } from "./components/UserMenu";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { HomeScrollCue } from "./components/HomeScrollCue";
-import { getUser } from "./actions/auth";
 import {
   AlbumArtwork,
   BrandMark,
@@ -325,9 +324,7 @@ function StepPreview({ step }: { step: number }) {
   );
 }
 
-export default async function Home() {
-  const user = await getUser();
-
+export default function Home() {
   return (
     <div className="paper-canvas min-h-screen overflow-hidden bg-background text-ink">
       <header className="border-b border-border bg-background/90 backdrop-blur-xl">
@@ -337,7 +334,7 @@ export default async function Home() {
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle compact />
-            <UserMenu user={user} />
+            <UserMenu />
           </div>
         </div>
       </header>
@@ -366,7 +363,7 @@ export default async function Home() {
             </p>
             <h1 className="mt-7 max-w-3xl text-5xl font-black leading-[0.95] tracking-[-0.055em] text-ink sm:text-6xl lg:text-7xl">
               No budget for music promotion.
-              <span className="mt-2 block font-marker text-[0.72em]  font-normal leading-none text-coral-strong">
+              <span className="mt-2 block font-marker text-[0.72em]  font-normal text-italic leading-none text-coral-strong">
                 use your time instead !
               </span>
             </h1>

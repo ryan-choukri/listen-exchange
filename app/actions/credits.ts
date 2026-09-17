@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/app/lib/supabase/server";
+import { getAuthenticatedClient } from "@/app/lib/auth/get-authenticated-client";
 
 export interface AllocateCreditsResponse {
   success: boolean;
@@ -130,40 +131,6 @@ export async function removeTracksCredits(
 }
 
 /**
- * Get user's current credit balance
- * @returns Current credit balance or null if not authenticated
- */
-export async function getUserCredits(): Promise<number | null> {
-  try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return null;
-    }
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("credits")
-      .eq("id", user.id)
-      .single();
-
-    if (error || !data) {
-      console.error("Error fetching credits:", error);
-      return null;
-    }
-
-    return data.credits;
-  } catch (err) {
-    console.error("Error getting user credits:", err);
-    return null;
-  }
-}
-
-/**
  * Get a track's credit information
  * @param trackId - UUID of the submitted track
  * @returns Track credits and status
@@ -204,20 +171,16 @@ export async function getUserCreditTransactions(): Promise<
   CreditTransaction[]
 > {
   try {
-    const supabase = await createClient();
+    const { supabase, identity } = await getAuthenticatedClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    if (!identity) {
       return [];
     }
 
     const { data, error } = await supabase
       .from("credit_transactions")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", identity.id)
       .order("created_at", { ascending: false });
 
     if (error) {

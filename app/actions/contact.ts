@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/app/lib/supabase/server";
+import { getAuthenticatedClient } from "@/app/lib/auth/get-authenticated-client";
 import {
   CONTACT_SUBJECTS,
   type ContactSubject,
@@ -55,13 +55,10 @@ export async function submitContactMessage(
     };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, identity } = await getAuthenticatedClient();
 
   const { error } = await supabase.from("contact_messages").insert({
-    user_id: user?.id ?? null,
+    user_id: identity?.id ?? null,
     email,
     subject: subject as ContactSubject,
     message,

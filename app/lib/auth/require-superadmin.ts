@@ -1,16 +1,13 @@
 import "server-only";
 
+import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/app/lib/supabase/server";
+import { getAuthenticatedClient } from "@/app/lib/auth/get-authenticated-client";
 
-export async function requireSuperadmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+export const requireSuperadmin = cache(async () => {
+  const { supabase, identity } = await getAuthenticatedClient();
 
-  if (userError || !user) {
+  if (!identity) {
     redirect("/auth/login");
   }
 
@@ -28,5 +25,9 @@ export async function requireSuperadmin() {
     notFound();
   }
 
-  return { userId: user.id } as const;
-}
+  return {
+    userId: identity.id,
+    email: identity.email || "Admin",
+    supabase,
+  } as const;
+});

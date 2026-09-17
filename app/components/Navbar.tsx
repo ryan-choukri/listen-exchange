@@ -5,12 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/app/components/LogoutButton";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
-import { createClient } from "@/app/lib/supabase/client";
-import { getUserProfile } from "@/app/actions/feedback";
-import {
-  CREDITS_UPDATED_EVENT,
-  type CreditsUpdatedDetail,
-} from "@/app/lib/credits-events";
+import { useCurrentUser } from "@/app/components/CurrentUserProvider";
 import {
   AppSidebar,
   BrandMark,
@@ -19,76 +14,12 @@ import {
   type NavigationItem,
 } from "@/app/components/ui/design-system";
 
-interface User {
-  id: string;
-  email: string;
-}
-
 export function Navbar() {
-  const [user, setUser] = useState<User | null>(null);
-  const [credits, setCredits] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading } = useCurrentUser();
+  const credits = user?.credits ?? 0;
   const [artistsListening, setArtistsListening] = useState(17);
   const [tracksListenedToday, setTracksListenedToday] = useState(80);
   const pathname = usePathname();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const supabase = await createClient();
-        const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser();
-
-        if (authUser) {
-          setUser({ id: authUser.id, email: authUser.email || "" });
-          try {
-            const profile = await getUserProfile();
-            setCredits(profile?.credits ?? 0);
-          } catch (error) {
-            console.error("Error fetching profile:", error);
-            setCredits(0);
-          }
-        } else {
-          setUser(null);
-          setCredits(0);
-        }
-      } catch (error) {
-        console.error("Error checking auth:", error);
-        setUser(null);
-        setCredits(0);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  useEffect(() => {
-    const handleCreditsUpdated = async (event: Event) => {
-      const { balance } =
-        (event as CustomEvent<CreditsUpdatedDetail>).detail ?? {};
-
-      if (typeof balance === "number") {
-        setCredits(balance);
-        return;
-      }
-
-      try {
-        const profile = await getUserProfile();
-        setCredits(profile?.credits ?? 0);
-      } catch (error) {
-        console.error("Error refreshing profile credits:", error);
-      }
-    };
-
-    window.addEventListener(CREDITS_UPDATED_EVENT, handleCreditsUpdated);
-
-    return () => {
-      window.removeEventListener(CREDITS_UPDATED_EVENT, handleCreditsUpdated);
-    };
-  }, []);
 
   useEffect(() => {
     const activityInterval = window.setInterval(() => {
@@ -117,6 +48,12 @@ export function Navbar() {
       label: "Submit a track",
       icon: "upload",
       active: pathname === "/submit",
+    },
+    {
+      href: "/my-tracks",
+      label: "My tracks",
+      icon: "music",
+      active: pathname === "/my-tracks",
     },
     ...// user
     // ?

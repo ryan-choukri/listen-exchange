@@ -1,10 +1,9 @@
 "use server";
 
-import { createClient } from "@/app/lib/supabase/server";
+import { getAuthenticatedClient } from "@/app/lib/auth/get-authenticated-client";
 import {
   SubmitFeedbackResponse,
   TrackFeedback,
-  UserProfile,
 } from "@/app/types/spotify";
 
 /**
@@ -42,13 +41,9 @@ export async function submitTrackFeedback(
       };
     }
 
-    const supabase = await createClient();
+    const { supabase, identity } = await getAuthenticatedClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    if (!identity) {
       return {
         success: false,
         feedback_id: null,
@@ -107,38 +102,6 @@ export async function submitTrackFeedback(
 }
 
 /**
- * Get user's current credit count
- * @returns User profile with credits
- */
-export async function getUserProfile(): Promise<UserProfile | null> {
-  try {
-    const supabase = await createClient();
-
-    const { data: user } = await supabase.auth.getUser();
-
-    if (!user.user) {
-      return null;
-    }
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.user.id)
-      .single();
-
-    if (error) {
-      console.error("Error fetching profile:", error);
-      return null;
-    }
-
-    return data as UserProfile;
-  } catch (err) {
-    console.error("Error getting user profile:", err);
-    return null;
-  }
-}
-
-/**
  * Check if user already gave feedback on a specific track
  * @param trackId - Spotify track ID
  * @returns The existing feedback if it exists, null otherwise
@@ -147,18 +110,16 @@ export async function getUserTrackFeedback(
   trackId: string,
 ): Promise<TrackFeedback | null> {
   try {
-    const supabase = await createClient();
+    const { supabase, identity } = await getAuthenticatedClient();
 
-    const { data: user } = await supabase.auth.getUser();
-
-    if (!user.user) {
+    if (!identity) {
       return null;
     }
 
     const { data, error } = await supabase
       .from("track_feedbacks")
       .select("*")
-      .eq("user_id", user.user.id)
+      .eq("user_id", identity.id)
       .eq("track_id", trackId)
       .single();
 
@@ -181,18 +142,16 @@ export async function getUserTrackFeedback(
  */
 export async function getUserFeedbacks(): Promise<TrackFeedback[]> {
   try {
-    const supabase = await createClient();
+    const { supabase, identity } = await getAuthenticatedClient();
 
-    const { data: user } = await supabase.auth.getUser();
-
-    if (!user.user) {
+    if (!identity) {
       return [];
     }
 
     const { data, error } = await supabase
       .from("track_feedbacks")
       .select("*")
-      .eq("user_id", user.user.id)
+      .eq("user_id", identity.id)
       .order("created_at", { ascending: false });
 
     if (error) {

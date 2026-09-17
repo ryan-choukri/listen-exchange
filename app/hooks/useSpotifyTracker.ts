@@ -103,6 +103,8 @@ export function useSpotifyTracker(
   const sessionIdRef = useRef<string | null>(null);
   const statusRef = useRef<ListeningSessionStatus | null>(null);
   const latestPlaybackRef = useRef<PlaybackSnapshot | null>(null);
+  const lastHeartbeatPositionRef = useRef<number | null>(null);
+  const pauseReportedRef = useRef(false);
   const startInFlightRef = useRef(false);
   const heartbeatInFlightRef = useRef(false);
 
@@ -147,8 +149,62 @@ export function useSpotifyTracker(
     if (result.status === "invalid" || result.status === "abandoned") {
       sessionIdRef.current = null;
       setSessionId(null);
+      setIsPlaying(false);
     }
   }, []);
+
+  const sendHeartbeat = useCallback(async (
+    snapshotOverride?: PlaybackSnapshot,
+    reportInactive = false,
+  ) => {
+    const currentSessionId = sessionIdRef.current;
+    const snapshot = snapshotOverride ?? latestPlaybackRef.current;
+    const inactive = Boolean(
+      snapshot &&
+        (snapshot.isPaused || snapshot.isBuffering || document.hidden),
+    );
+
+    if (
+      !currentSessionId ||
+      !snapshot ||
+      heartbeatInFlightRef.current ||
+      statusRef.current !== "active" ||
+      (inactive && (!reportInactive || pauseReportedRef.current))
+    ) {
+      return;
+    }
+
+    if (
+      !inactive &&
+      lastHeartbeatPositionRef.current !== null &&
+      snapshot.positionMs <= lastHeartbeatPositionRef.current
+    ) {
+      setIsPlaying(false);
+      return;
+    }
+
+    heartbeatInFlightRef.current = true;
+    try {
+      const result = await heartbeatListeningSession(
+        currentSessionId,
+        snapshot.positionMs,
+        snapshot.isPaused || document.hidden,
+        snapshot.isBuffering,
+        snapshot.playingUri,
+      );
+      applyServerResult(result);
+
+      if (result.success) {
+        lastHeartbeatPositionRef.current = snapshot.positionMs;
+        pauseReportedRef.current = inactive;
+      }
+    } catch (error) {
+      console.error("Verified listening heartbeat failed:", error);
+      setListeningError("Listening verification lost connection.");
+    } finally {
+      heartbeatInFlightRef.current = false;
+    }
+  }, [applyServerResult]);
 
   const ensureSession = useCallback(
     async (snapshot: PlaybackSnapshot) => {
@@ -169,6 +225,20 @@ export function useSpotifyTracker(
           snapshot.playingUri,
         );
         applyServerResult(result);
+
+        if (result.success && result.status === "active") {
+          lastHeartbeatPositionRef.current = snapshot.positionMs;
+
+          const latestSnapshot = latestPlaybackRef.current;
+          if (
+            latestSnapshot &&
+            (latestSnapshot.isPaused ||
+              latestSnapshot.isBuffering ||
+              document.hidden)
+          ) {
+            void sendHeartbeat(latestSnapshot, true);
+          }
+        }
       } catch (error) {
         console.error("Unable to start verified listening:", error);
         setListeningError("The verified listening session could not start.");
@@ -176,39 +246,8 @@ export function useSpotifyTracker(
         startInFlightRef.current = false;
       }
     },
-    [applyServerResult, submittedTrackId],
+    [applyServerResult, sendHeartbeat, submittedTrackId],
   );
-
-  const sendHeartbeat = useCallback(async () => {
-    const currentSessionId = sessionIdRef.current;
-    const snapshot = latestPlaybackRef.current;
-
-    if (
-      !currentSessionId ||
-      !snapshot ||
-      heartbeatInFlightRef.current ||
-      statusRef.current !== "active"
-    ) {
-      return;
-    }
-
-    heartbeatInFlightRef.current = true;
-    try {
-      const result = await heartbeatListeningSession(
-        currentSessionId,
-        snapshot.positionMs,
-        snapshot.isPaused || document.hidden,
-        snapshot.isBuffering,
-        snapshot.playingUri,
-      );
-      applyServerResult(result);
-    } catch (error) {
-      console.error("Verified listening heartbeat failed:", error);
-      setListeningError("Listening verification lost connection.");
-    } finally {
-      heartbeatInFlightRef.current = false;
-    }
-  }, [applyServerResult]);
 
   const handlePlaybackUpdate = useCallback(
     (event: SpotifyIFrameEvent) => {
@@ -233,15 +272,27 @@ export function useSpotifyTracker(
         playingUri,
       };
 
+      const previousSnapshot = latestPlaybackRef.current;
       latestPlaybackRef.current = snapshot;
-      const activelyPlaying = !isPaused && !isBuffering && !document.hidden;
-      setIsPlaying(activelyPlaying);
+      const hasRealProgress = Boolean(
+        previousSnapshot &&
+          previousSnapshot.playingUri === playingUri &&
+          positionMs > previousSnapshot.positionMs &&
+          !isPaused &&
+          !isBuffering &&
+          !document.hidden,
+      );
 
-      if (activelyPlaying) {
+      setIsPlaying(hasRealProgress);
+
+      if (hasRealProgress) {
+        pauseReportedRef.current = false;
         void ensureSession(snapshot);
+      } else if (isPaused || isBuffering || document.hidden) {
+        void sendHeartbeat(snapshot, true);
       }
     },
-    [ensureSession],
+    [ensureSession, sendHeartbeat],
   );
 
   const resetListening = useCallback(() => {
@@ -253,6 +304,8 @@ export function useSpotifyTracker(
     sessionIdRef.current = null;
     statusRef.current = null;
     latestPlaybackRef.current = null;
+    lastHeartbeatPositionRef.current = null;
+    pauseReportedRef.current = false;
     setSessionId(null);
     setListeningStatus(null);
     setListenedMs(0);
@@ -293,7 +346,8 @@ export function useSpotifyTracker(
     if (
       !heartbeatIntervalMs ||
       !sessionId ||
-      listeningStatus !== "active"
+      listeningStatus !== "active" ||
+      !isPlaying
     ) {
       return;
     }
@@ -303,7 +357,29 @@ export function useSpotifyTracker(
     }, heartbeatIntervalMs);
 
     return () => window.clearInterval(heartbeatTimer);
-  }, [heartbeatIntervalMs, listeningStatus, sendHeartbeat, sessionId]);
+  }, [
+    heartbeatIntervalMs,
+    isPlaying,
+    listeningStatus,
+    sendHeartbeat,
+    sessionId,
+  ]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) return;
+
+      setIsPlaying(false);
+      const snapshot = latestPlaybackRef.current;
+      if (snapshot) {
+        void sendHeartbeat(snapshot, true);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [sendHeartbeat]);
 
   useEffect(() => {
     const host = embedContainerRef.current;
@@ -321,6 +397,8 @@ export function useSpotifyTracker(
     sessionIdRef.current = null;
     statusRef.current = null;
     latestPlaybackRef.current = null;
+    lastHeartbeatPositionRef.current = null;
+    pauseReportedRef.current = false;
     setSessionId(null);
     setListeningStatus(null);
     setListenedMs(0);
@@ -349,9 +427,6 @@ export function useSpotifyTracker(
             localController = controller;
             controller.addListener("ready", () => {
               if (!cancelled) setReady(true);
-            });
-            controller.addListener("playback_started", () => {
-              if (!cancelled) setIsPlaying(true);
             });
             controller.addListener("playback_update", (event) => {
               if (!cancelled) handlePlaybackUpdate(event);

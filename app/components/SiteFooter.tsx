@@ -13,6 +13,11 @@ const footerLinks = [
 
 export function SiteFooter() {
   const pathname = usePathname();
+
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
+
   const hasAppNavigation = pathname !== "/" && !pathname.startsWith("/auth/");
 
   return (

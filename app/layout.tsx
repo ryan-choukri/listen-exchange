@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { CurrentUserProvider } from "@/app/components/CurrentUserProvider";
 import { SiteFooter } from "@/app/components/SiteFooter";
 import { THEME_STORAGE_KEY } from "@/app/lib/theme";
 import "./globals.css";
@@ -55,8 +56,10 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col">
-        {children}
-        <SiteFooter />
+        <CurrentUserProvider>
+          {children}
+          <SiteFooter />
+        </CurrentUserProvider>
       </body>
     </html>
   );

@@ -35,9 +35,8 @@ export async function middleware(request: NextRequest) {
       },
     );
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getClaims();
+    const isAuthenticated = Boolean(!error && data?.claims?.sub);
 
     // Refresh and pre-filter sessions for protected routes. Authorization for
     // /admin is enforced again against the database by requireSuperadmin().
@@ -45,20 +44,20 @@ export async function middleware(request: NextRequest) {
       request.nextUrl.pathname.startsWith("/dashboard") ||
       request.nextUrl.pathname.startsWith("/admin");
 
-    if (!user && isProtectedRoute) {
+    if (!isAuthenticated && isProtectedRoute) {
       const url = request.nextUrl.clone();
       url.pathname = "/auth/login";
       return NextResponse.redirect(url);
     }
 
     // Check if authenticated user is trying to access auth pages
-    if (user && request.nextUrl.pathname.startsWith("/auth/login")) {
+    if (isAuthenticated && request.nextUrl.pathname.startsWith("/auth/login")) {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);
     }
 
-    if (user && request.nextUrl.pathname.startsWith("/auth/signup")) {
+    if (isAuthenticated && request.nextUrl.pathname.startsWith("/auth/signup")) {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);

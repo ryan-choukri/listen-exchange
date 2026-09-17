@@ -5,15 +5,15 @@ import Link from "next/link";
 import { signOut } from "@/app/actions/auth";
 import { LinkButton } from "./Button";
 import { Icon } from "./ui/design-system";
+import { useCurrentUser } from "@/app/components/CurrentUserProvider";
 
-interface UserMenuProps {
-  user: {
-    email?: string;
-  } | null;
-}
-
-export function UserMenu({ user }: UserMenuProps) {
+export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, isLoading, clearUser } = useCurrentUser();
+
+  if (isLoading) {
+    return <span className="h-10 w-28 animate-pulse rounded-control bg-surface" />;
+  }
 
   if (!user) {
     return (
@@ -65,8 +65,11 @@ export function UserMenu({ user }: UserMenuProps) {
           <form action={signOut} className="w-full">
             <button
               type="submit"
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-muted hover:bg-surface-muted hover:text-ink"
-              onClick={() => setIsOpen(false)}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-muted hover:bg-surface-muted hover:text-ink"
+            onClick={() => {
+              setIsOpen(false);
+              clearUser();
+            }}
               role="menuitem"
             >
               <Icon name="arrow-left" className="size-4" />

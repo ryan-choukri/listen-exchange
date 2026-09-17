@@ -10,7 +10,7 @@ import { SpotifyOEmbedResponse } from "@/app/types/spotify";
 import { submitTrack } from "@/app/actions/submit";
 import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
 
-export default function SubmitPage() {
+export default function MyTracksPage() {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -131,9 +131,9 @@ export default function SubmitPage() {
     <AppShell width="medium">
       <div className="space-y-8">
         <PageHeader
-          eyebrow="For artists & curators"
-          title="Submit Your Track"
-          description="Share your track. And get real Spotify listens !"
+          eyebrow="Your Tracks"
+          title="Manage your tracks"
+          description="Manage the tracks you have submitted and allow credits to get listening."
         />
 
         {success && (
@@ -143,7 +143,19 @@ export default function SubmitPage() {
             </Notice>
           </div>
         )}
-
+        <section aria-labelledby="submitted-tracks-heading">
+          <UserSubmittedTracksList
+            key={refreshKey}
+            refreshKey={refreshKey}
+            onTrackDeleted={handleTrackDeleted}
+          />
+        </section>
+        <h2
+          id="submitted-tracks-heading"
+          className="mb-4 text-xl font-black text-ink"
+        >
+          Add a new track
+        </h2>
         <Surface className="p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-coral/20 text-coral-strong">
@@ -257,20 +269,6 @@ export default function SubmitPage() {
             <li>• Tracks will appear in the discovery queue</li>
           </ul>
         </Notice>
-
-        <section aria-labelledby="submitted-tracks-heading">
-          <h2
-            id="submitted-tracks-heading"
-            className="mb-4 text-xl font-black text-ink"
-          >
-            Your releases
-          </h2>
-          <UserSubmittedTracksList
-            key={refreshKey}
-            refreshKey={refreshKey}
-            onTrackDeleted={handleTrackDeleted}
-          />
-        </section>
       </div>
     </AppShell>
   );

@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/app/lib/supabase/server";
+import { getAuthenticatedClient } from "@/app/lib/auth/get-authenticated-client";
 
 export type ListeningSessionStatus =
   | "active"
@@ -62,19 +62,10 @@ function parseSessionResult(value: unknown): ListeningSessionResult | null {
   };
 }
 
-async function getAuthenticatedClient() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  return { supabase, user };
-}
-
 export async function getListeningConfig(): Promise<ListeningConfigResult> {
-  const { supabase, user } = await getAuthenticatedClient();
+  const { supabase, identity } = await getAuthenticatedClient();
 
-  if (!user) {
+  if (!identity) {
     return {
       success: false,
       minDurationMs: null,
@@ -124,9 +115,9 @@ export async function startListeningSession(
     };
   }
 
-  const { supabase, user } = await getAuthenticatedClient();
+  const { supabase, identity } = await getAuthenticatedClient();
 
-  if (!user) {
+  if (!identity) {
     return {
       success: false,
       sessionId: null,
@@ -196,9 +187,9 @@ export async function heartbeatListeningSession(
     };
   }
 
-  const { supabase, user } = await getAuthenticatedClient();
+  const { supabase, identity } = await getAuthenticatedClient();
 
-  if (!user) {
+  if (!identity) {
     return {
       success: false,
       sessionId,
@@ -253,8 +244,8 @@ export async function abandonListeningSession(sessionId: string) {
     return false;
   }
 
-  const { supabase, user } = await getAuthenticatedClient();
-  if (!user) {
+  const { supabase, identity } = await getAuthenticatedClient();
+  if (!identity) {
     return false;
   }
 

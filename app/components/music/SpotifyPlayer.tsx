@@ -45,6 +45,13 @@ export function SpotifyPlayer({
           </div>
         )}
       </div>
+      <div className="mx-1 mt-2 rounded-control border border-white/15 bg-white/5 px-3 py-2 text-white">
+        <p className="text-xs font-bold">Spotify Premium required</p>
+        <p className="mt-0.5 text-[11px] italic leading-relaxed text-white/65">
+          Premium is required to validate your listens and make sure your own
+          tracks receive valid listens when you spend credits.
+        </p>
+      </div>
       <div className="mt-2">
         <ListeningProgress
           isPlaying={isPlaying}

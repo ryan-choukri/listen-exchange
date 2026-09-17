@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { AppShell } from "@/app/components/AppShell";
 import { PageHeader } from "@/app/components/PageHeader";
 import { ContactForm } from "@/app/contact/ContactForm";
-import { createClient } from "@/app/lib/supabase/server";
 import { Icon, Surface } from "@/app/components/ui/design-system";
 
 export const metadata: Metadata = {
@@ -10,12 +9,7 @@ export const metadata: Metadata = {
   description: "Contact the Listen Exchange team.",
 };
 
-export default async function ContactPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+export default function ContactPage() {
   return (
     <AppShell width="narrow">
       <div className="space-y-8">
@@ -38,7 +32,7 @@ export default async function ContactPage() {
             </div>
           </div>
 
-          <ContactForm initialEmail={user?.email ?? ""} />
+          <ContactForm />
         </Surface>
 
         <p className="text-center font-marker text-base text-muted">
