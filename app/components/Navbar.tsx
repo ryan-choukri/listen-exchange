@@ -28,6 +28,8 @@ export function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [credits, setCredits] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [artistsListening, setArtistsListening] = useState(17);
+  const [tracksListenedToday, setTracksListenedToday] = useState(80);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -88,6 +90,21 @@ export function Navbar() {
     };
   }, []);
 
+  useEffect(() => {
+    const activityInterval = window.setInterval(() => {
+      setArtistsListening((current) => {
+        const nextStep = Math.floor(Math.random() * 3) - 1;
+        return Math.min(30, Math.max(17, current + nextStep));
+      });
+
+      setTracksListenedToday((current) =>
+        Math.random() > 0.65 ? Math.min(120, current + 1) : current,
+      );
+    }, 5200);
+
+    return () => window.clearInterval(activityInterval);
+  }, []);
+
   const items: NavigationItem[] = [
     {
       href: "/discover",
@@ -101,29 +118,62 @@ export function Navbar() {
       icon: "upload",
       active: pathname === "/submit",
     },
-    ...(user
-      ? [
-          {
-            href: "/dashboard",
-            label: "Dashboard",
-            icon: "user" as const,
-            active: pathname === "/dashboard",
-          },
-        ]
-      : [
-          {
-            href: "/auth/login",
-            label: "Sign in",
-            icon: "user" as const,
-            active: pathname === "/auth/login",
-          },
-        ]),
+    ...// user
+    // ?
+    [
+      {
+        href: "/dashboard",
+        label: "Dashboard",
+        icon: "user" as const,
+        active: pathname === "/dashboard",
+      },
+    ],
+    // : [
+    //     {
+    //       href: "/auth/login",
+    //       label: "Sign in",
+    //       icon: "user" as const,
+    //       active: pathname === "/auth/login",
+    //     },
+    //   ]
   ];
 
   const mobileItems: NavigationItem[] = [
     { href: "/", label: "Home", icon: "music", active: pathname === "/" },
     ...items,
   ];
+
+  const liveActivity = (
+    <div
+      className="space-y-2 px-1"
+      aria-label={`${artistsListening} artists listening and ${tracksListenedToday} tracks listened to today`}
+    >
+      <div className="flex items-center gap-2 text-[11px] leading-none text-muted">
+        <span
+          className="size-1.5 shrink-0 animate-pulse rounded-full bg-success motion-reduce:animate-none"
+          aria-hidden="true"
+        />
+        <span>
+          <strong className="font-mono text-xs font-black tabular-nums text-ink">
+            ~{artistsListening}
+          </strong>{" "}
+          artists listening
+        </span>
+      </div>
+      <div className="flex items-center gap-2 text-[11px] leading-none text-muted">
+        <span
+          className="size-1.5 shrink-0 animate-pulse rounded-full bg-coral motion-reduce:animate-none"
+          aria-hidden="true"
+        />
+        <span>
+          <strong className="font-mono text-xs font-black tabular-nums text-ink">
+            +{tracksListenedToday}
+          </strong>{" "}
+          tracks listened to today
+        </span>
+      </div>
+    </div>
+  );
 
   const accountPanel = isLoading ? (
     <div className="space-y-3 rounded-control border border-border bg-background p-3">
@@ -141,7 +191,23 @@ export function Navbar() {
           {user.email.split("@")[0]}
         </p>
       </div>
-      <LogoutButton variant="ghost" className="w-full" />
+      <div className="flex items-center justify-end gap-1 border-t border-border pt-1.5">
+        <Link
+          href="/contact"
+          aria-current={pathname === "/contact" ? "page" : undefined}
+          className={`inline-flex min-h-6 items-center rounded-md px-2 py-0.5 text-[10px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+            pathname === "/contact"
+              ? "bg-surface-muted text-ink"
+              : "text-muted hover:bg-surface-muted hover:text-ink"
+          }`}
+        >
+          Contact us
+        </Link>
+        <LogoutButton
+          variant="ghost"
+          className="!min-h-6 !rounded-md !px-2 !py-0.5 !text-[10px] text-muted"
+        />
+      </div>
     </div>
   ) : (
     <div className="rounded-control border border-border bg-background p-3">
@@ -160,6 +226,7 @@ export function Navbar() {
 
   const footer = (
     <div className="space-y-3">
+      {liveActivity}
       {accountPanel}
       <ThemeToggle />
     </div>

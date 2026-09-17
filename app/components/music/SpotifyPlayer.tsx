@@ -1,12 +1,25 @@
 import type { Ref } from "react";
 import { Badge, Icon } from "@/app/components/ui/design-system";
+import { ListeningProgress } from "./ListeningProgress";
 
 export function SpotifyPlayer({
   containerRef,
   ready,
+  isPlaying,
+  listenedMs,
+  requiredMs,
+  progressPercent,
+  isListeningComplete,
+  listeningError,
 }: {
   containerRef: Ref<HTMLDivElement>;
   ready: boolean;
+  isPlaying: boolean;
+  listenedMs: number;
+  requiredMs: number | null;
+  progressPercent: number;
+  isListeningComplete: boolean;
+  listeningError: string | null;
 }) {
   return (
     <div className="overflow-hidden rounded-card border border-border bg-spotify-surface p-2 shadow-card">
@@ -31,6 +44,16 @@ export function SpotifyPlayer({
             </div>
           </div>
         )}
+      </div>
+      <div className="mt-2">
+        <ListeningProgress
+          isPlaying={isPlaying}
+          listenedMs={listenedMs}
+          requiredMs={requiredMs}
+          progressPercent={progressPercent}
+          complete={isListeningComplete}
+          error={listeningError}
+        />
       </div>
     </div>
   );

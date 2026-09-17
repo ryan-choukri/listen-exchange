@@ -77,9 +77,12 @@ export default function DiscoverPage() {
 
   const currentTrack = tracks[currentTrackIndex];
 
-  const handleFeedbackSubmit = async (feedback: string) => {
+  const handleFeedbackSubmit = async (
+    listeningSessionId: string,
+    feedback: string,
+  ) => {
     try {
-      const result = await submitTrackFeedback(currentTrack.trackId, feedback);
+      const result = await submitTrackFeedback(listeningSessionId, feedback);
 
       if (result.success) {
         announceCreditsUpdated(result.new_credits ?? undefined);
@@ -226,7 +229,7 @@ export default function DiscoverPage() {
 
             <Notice tone="info" title="How it works">
               <ol className="ml-4 list-decimal space-y-1">
-                <li>Listen to the track for 10 seconds of real play time</li>
+                <li>Complete the server-verified listening timer</li>
                 <li>Share honest feedback (minimum 10 characters)</li>
                 <li>Earn 1 credit per submission</li>
                 <li>Use credits to support your own tracks</li>

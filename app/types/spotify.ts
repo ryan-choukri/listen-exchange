@@ -38,7 +38,7 @@ export interface ListeningState {
   totalListenedMs: number;
   isPlaying: boolean;
   lastUpdateTime: number;
-  hasReached60Seconds: boolean;
+  isVerified: boolean;
 }
 
 // User profile with credits

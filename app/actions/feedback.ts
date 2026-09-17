@@ -8,22 +8,58 @@ import {
 } from "@/app/types/spotify";
 
 /**
- * Submit feedback for a track and award credit atomically via RPC
- * @param trackId - Spotify track ID
+ * Submit feedback for a server-verified listening session and award credit
+ * atomically via RPC.
+ * @param listeningSessionId - Server-issued listening session UUID
  * @param feedback - User feedback text
  * @returns Response with success status, new credit count, and error message if any
  */
 export async function submitTrackFeedback(
-  trackId: string,
+  listeningSessionId: string,
   feedback: string,
 ): Promise<SubmitFeedbackResponse & { error?: string }> {
   try {
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        listeningSessionId,
+      )
+    ) {
+      return {
+        success: false,
+        feedback_id: null,
+        message: "Complete a verified listen before submitting feedback.",
+        new_credits: null,
+      };
+    }
+
+    const trimmedFeedback = feedback.trim();
+    if (trimmedFeedback.length < 10 || trimmedFeedback.length > 500) {
+      return {
+        success: false,
+        feedback_id: null,
+        message: "Feedback must contain between 10 and 500 characters.",
+        new_credits: null,
+      };
+    }
+
     const supabase = await createClient();
 
-    // Call the RPC function
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return {
+        success: false,
+        feedback_id: null,
+        message: "You must be signed in to submit feedback.",
+        new_credits: null,
+      };
+    }
+
     const { data, error } = await supabase.rpc("submit_track_feedback", {
-      p_track_id: trackId,
-      p_feedback: feedback,
+      p_listening_session_id: listeningSessionId,
+      p_feedback: trimmedFeedback,
     });
 
     if (error) {

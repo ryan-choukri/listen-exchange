@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    let supabaseResponse = NextResponse.next({
+    const supabaseResponse = NextResponse.next({
       request,
     });
 
@@ -39,8 +39,13 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // Check if user tried to access protected routes
-    if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+    // Refresh and pre-filter sessions for protected routes. Authorization for
+    // /admin is enforced again against the database by requireSuperadmin().
+    const isProtectedRoute =
+      request.nextUrl.pathname.startsWith("/dashboard") ||
+      request.nextUrl.pathname.startsWith("/admin");
+
+    if (!user && isProtectedRoute) {
       const url = request.nextUrl.clone();
       url.pathname = "/auth/login";
       return NextResponse.redirect(url);
@@ -67,5 +72,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth/:path*", "/"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/auth/:path*", "/"],
 };

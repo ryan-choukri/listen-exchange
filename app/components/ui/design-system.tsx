@@ -11,12 +11,16 @@ import Link from "next/link";
 
 export type IconName =
   | "alert"
+  | "arrow-down"
   | "arrow-left"
   | "arrow-right"
+  | "arrow-up-right"
+  | "chart"
   | "check"
   | "chevron-down"
   | "clock"
   | "close"
+  | "flow-arrow-right"
   | "headphones"
   | "heart"
   | "home"
@@ -53,8 +57,27 @@ export function Icon({
         <path d="m10.3 3.4-8.1 14a2 2 0 0 0 1.7 3h16.2a2 2 0 0 0 1.7-3l-8.1-14a2 2 0 0 0-3.4 0Z" />
       </>
     ),
+    "arrow-down": (
+      <>
+        <path d="M12 5v14" />
+        <path d="m6 13 6 6 6-6" />
+      </>
+    ),
     "arrow-left": <path d="m15 18-6-6 6-6" />,
     "arrow-right": <path d="m9 18 6-6-6-6" />,
+    "arrow-up-right": (
+      <>
+        <path d="M7 17 17 7" />
+        <path d="M7 7h10v10" />
+      </>
+    ),
+    chart: (
+      <>
+        <path d="M4 20V11h4v9" />
+        <path d="M10 20V4h4v16" />
+        <path d="M16 20v-6h4v6" />
+      </>
+    ),
     check: <path d="m5 12 4 4L19 6" />,
     "chevron-down": <path d="m6 9 6 6 6-6" />,
     clock: (
@@ -69,6 +92,12 @@ export function Icon({
         <path d="m18 6-12 12" />
       </>
     ),
+    "flow-arrow-right": (
+      <>
+        <path d="M4 12h16" />
+        <path d="m14 6 6 6-6 6" />
+      </>
+    ),
     headphones: (
       <>
         <path d="M4 15v-3a8 8 0 0 1 16 0v3" />
@@ -76,7 +105,9 @@ export function Icon({
         <path d="M6 14H5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1v-6Z" />
       </>
     ),
-    heart: <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />,
+    heart: (
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />
+    ),
     home: (
       <>
         <path d="m3 11 9-8 9 8" />
@@ -130,11 +161,16 @@ export function Icon({
         <path d="m20 20-4-4" />
       </>
     ),
-    sparkle: <path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z" />,
+    sparkle: (
+      <path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z" />
+    ),
     spotify: (
       <>
         <circle cx="12" cy="12" r="10" fill="currentColor" stroke="none" />
-        <path d="M7 9.4c3.8-1.1 7.7-.7 10.5.8M7.8 12.8c3.1-.8 6.4-.5 8.9.8M8.7 16c2.5-.6 5-.3 7 .7" stroke="white" />
+        <path
+          d="M7 9.4c3.8-1.1 7.7-.7 10.5.8M7.8 12.8c3.1-.8 6.4-.5 8.9.8M8.7 16c2.5-.6 5-.3 7 .7"
+          stroke="white"
+        />
       </>
     ),
     trophy: (
@@ -198,8 +234,7 @@ function joinClasses(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?:
     | "primary"
     | "secondary"
@@ -208,6 +243,7 @@ export interface ButtonProps
     | "danger"
     | "danger-outline";
   size?: "sm" | "md" | "lg" | "icon";
+  shape?: "control" | "pill";
   icon?: IconName;
   loading?: boolean;
 }
@@ -240,10 +276,12 @@ const buttonSizes: Record<ButtonSize, string> = {
 function buttonClasses(
   variant: ButtonVariant,
   size: ButtonSize,
+  shape: NonNullable<ButtonProps["shape"]>,
   className?: string,
 ) {
   return joinClasses(
-    "inline-flex items-center justify-center rounded-control border font-semibold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:border-border disabled:bg-surface-muted disabled:text-muted disabled:shadow-none",
+    "inline-flex items-center justify-center border font-semibold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:border-border disabled:bg-surface-muted disabled:text-muted disabled:shadow-none",
+    shape === "pill" ? "rounded-full" : "rounded-control",
     buttonVariants[variant],
     buttonSizes[size],
     className,
@@ -255,6 +293,7 @@ export function Button({
   className,
   variant = "primary",
   size = "md",
+  shape = "control",
   icon,
   loading = false,
   disabled,
@@ -262,7 +301,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={buttonClasses(variant, size, className)}
+      className={buttonClasses(variant, size, shape, className)}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...props}
@@ -278,11 +317,14 @@ export function Button({
   );
 }
 
-export interface LinkButtonProps
-  extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> {
+export interface LinkButtonProps extends Omit<
+  AnchorHTMLAttributes<HTMLAnchorElement>,
+  "href"
+> {
   href: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  shape?: NonNullable<ButtonProps["shape"]>;
   icon?: IconName;
 }
 
@@ -292,13 +334,14 @@ export function LinkButton({
   className,
   variant = "primary",
   size = "md",
+  shape = "control",
   icon,
   ...props
 }: LinkButtonProps) {
   return (
     <Link
       href={href}
-      className={buttonClasses(variant, size, className)}
+      className={buttonClasses(variant, size, shape, className)}
       {...props}
     >
       {icon && <Icon name={icon} className="size-4" />}
@@ -355,11 +398,7 @@ export function Badge({
   );
 }
 
-export function StatusBadge({
-  status,
-}: {
-  status: "active" | "pending";
-}) {
+export function StatusBadge({ status }: { status: "active" | "pending" }) {
   const active = status === "active";
   return (
     <Badge tone={active ? "success" : "neutral"}>
@@ -487,6 +526,7 @@ export function SelectField({
   id,
   label,
   helper,
+  error,
   className,
   children,
   ...props
@@ -494,12 +534,18 @@ export function SelectField({
   id: string;
   label: string;
   helper?: string;
+  error?: string;
 }) {
   return (
-    <FieldShell id={id} label={label} helper={helper}>
+    <FieldShell id={id} label={label} helper={helper} error={error}>
       <select
         id={id}
-        className={joinClasses(controlClasses, className)}
+        className={joinClasses(
+          controlClasses,
+          error && "border-danger focus:border-danger focus:ring-danger/15",
+          className,
+        )}
+        aria-invalid={Boolean(error)}
         {...props}
       >
         {children}
@@ -581,7 +627,9 @@ export function ProgressBar({
     <div className="space-y-2">
       {(label || detail) && (
         <div className="flex items-center justify-between gap-4 text-xs">
-          <span className="font-semibold text-ink">{label}</span>
+          <span className="font-semibold text-ink">
+            <span dangerouslySetInnerHTML={{ __html: label ? label : "" }} />
+          </span>
           <span className="font-mono text-muted">{detail}</span>
         </div>
       )}
@@ -643,7 +691,12 @@ export function Notice({
     reward: "trophy",
   };
   return (
-    <div className={joinClasses("flex gap-3 rounded-control border p-3.5", tones[tone])}>
+    <div
+      className={joinClasses(
+        "flex gap-3 rounded-control border p-3.5",
+        tones[tone],
+      )}
+    >
       <Icon name={icons[tone]} className="mt-0.5 size-5 shrink-0" />
       <div>
         <p className="text-sm font-bold">{title}</p>
@@ -747,7 +800,9 @@ export function BrandMark({ compact = false }: { compact?: boolean }) {
       </span>
       {!compact && (
         <span className="leading-none">
-          <span className="block text-base font-black tracking-tight">LISTEN</span>
+          <span className="block text-base font-black tracking-tight">
+            LISTEN
+          </span>
           <span className="block font-marker text-sm">exchange</span>
         </span>
       )}
@@ -789,9 +844,13 @@ export function SpotifyEmbed({ compact = false }: { compact?: boolean }) {
       <div className="mb-2 flex items-center justify-between px-1 text-white">
         <div className="flex items-center gap-2">
           <Icon name="spotify" className="size-4" />
-          <span className="text-[11px] font-semibold">Lecteur officiel Spotify</span>
+          <span className="text-[11px] font-semibold">
+            Lecteur officiel Spotify
+          </span>
         </div>
-        <Badge className="border-white/20 bg-white/10 py-0.5 text-white">Embed</Badge>
+        <Badge className="border-white/20 bg-white/10 py-0.5 text-white">
+          Embed
+        </Badge>
       </div>
       <iframe
         title="Lecteur Spotify — Mr. Brightside, The Killers"
@@ -852,7 +911,9 @@ export function AppSidebar({
       {footer === undefined ? (
         <div className="mt-auto rounded-control border border-border bg-background p-3">
           <p className="text-xs font-bold text-ink">Tes contributions</p>
-          <p className="mt-1 text-xs text-muted">7 artistes soutenus ce mois-ci</p>
+          <p className="mt-1 text-xs text-muted">
+            7 artistes soutenus ce mois-ci
+          </p>
           <ProgressBar value={70} tone="lime" />
         </div>
       ) : (
@@ -890,7 +951,12 @@ export function MobileNav({
             link.active ? "text-coral-strong" : "text-muted",
           )}
         >
-          <span className={joinClasses("grid size-8 place-items-center rounded-full", link.active && "bg-coral/15")}>
+          <span
+            className={joinClasses(
+              "grid size-8 place-items-center rounded-full",
+              link.active && "bg-coral/15",
+            )}
+          >
             <Icon name={link.icon} className="size-4.5" />
           </span>
           {link.label}

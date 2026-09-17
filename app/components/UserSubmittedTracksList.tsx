@@ -101,7 +101,7 @@ function FeedbackPanel({
                     {formatDate(item.created_at)}
                   </time>
                 </div>
-                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted">
+                <p className="mt-2 whitespace-pre-wrap break-all text-sm leading-6 text-muted">
                   {item.feedback}
                 </p>
               </div>
@@ -360,10 +360,7 @@ export function UserSubmittedTracksList({
               </div>
 
               {isExpanded && track.feedbacks.length > 0 && (
-                <FeedbackPanel
-                  trackId={track.id}
-                  feedbacks={track.feedbacks}
-                />
+                <FeedbackPanel trackId={track.id} feedbacks={track.feedbacks} />
               )}
             </section>
           );

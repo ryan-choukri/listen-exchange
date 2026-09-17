@@ -11,7 +11,9 @@ export function FeedbackForm({
   onChange,
   onSubmit,
   onReset,
+  canEdit,
   unlocked,
+  requiredMs,
   existingFeedback,
   error,
   success,
@@ -24,7 +26,9 @@ export function FeedbackForm({
   onChange: (value: string) => void;
   onSubmit: () => void;
   onReset: () => void;
+  canEdit: boolean;
   unlocked: boolean;
+  requiredMs: number | null;
   existingFeedback: string | null;
   error: string | null;
   success: boolean;
@@ -32,6 +36,8 @@ export function FeedbackForm({
   canSubmit: boolean;
   minChars: number;
 }) {
+  const requiredSeconds = requiredMs ? Math.ceil(requiredMs / 1000) : null;
+
   if (existingFeedback) {
     return (
       <Notice tone="info" title="Feedback already submitted">
@@ -41,14 +47,18 @@ export function FeedbackForm({
     );
   }
 
-  if (!unlocked) {
+  if (!canEdit) {
     return (
       <div className="space-y-4">
         <TextareaField
           id={id}
           label="Share your feedback"
           value={value}
-          placeholder="Listen for 10 seconds to unlock feedback"
+          placeholder={
+            requiredSeconds
+              ? `Listen for ${requiredSeconds} seconds to unlock feedback (Be nice!)`
+              : "Complete the verified listen to unlock feedback (Be nice!)"
+          }
           helper="Feedback unlocks after verified playback."
           count={value.length}
           maxLength={500}
@@ -61,7 +71,9 @@ export function FeedbackForm({
           </span>
           <p className="mt-3 text-sm font-black text-ink">Feedback locked</p>
           <p className="mt-1 text-xs leading-5 text-muted">
-            Listen for 10 seconds to share your feedback.
+            {requiredSeconds
+              ? `Listen for ${requiredSeconds} seconds to share your feedback.`
+              : "Complete the verified listening timer to share your feedback."}
           </p>
         </div>
         <div className="flex justify-end">
@@ -80,8 +92,12 @@ export function FeedbackForm({
         label="Share your feedback"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="What do you think about this track?"
-        helper={`Minimum ${minChars} characters. Be specific and constructive.`}
+        placeholder="What do you think about this track? (Be nice !)"
+        helper={
+          unlocked
+            ? `Minimum ${minChars} characters. Be specific and constructive. And nice!`
+            : `Write while you listen. Submit unlocks after ${requiredSeconds ?? "the required listening time"}${requiredSeconds ? " seconds" : ""}.`
+        }
         count={value.length}
         maxLength={500}
         disabled={isSubmitting}

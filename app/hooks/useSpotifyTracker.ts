@@ -1,15 +1,32 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  abandonListeningSession,
+  getListeningConfig,
+  heartbeatListeningSession,
+  startListeningSession,
+  type ListeningSessionResult,
+  type ListeningSessionStatus,
+} from "@/app/actions/listening";
 
-const TARGET_MS = 10_000;
+interface SpotifyPlaybackData {
+  position?: number;
+  duration?: number;
+  isPaused?: boolean;
+  isBuffering?: boolean;
+  playingURI?: string;
+}
+
+interface SpotifyIFrameEvent {
+  data?: SpotifyPlaybackData;
+}
 
 interface SpotifyEmbedController {
   addListener(
     event: "ready" | "playback_started" | "playback_update",
-    callback: (event: any) => void,
+    callback: (event: SpotifyIFrameEvent) => void,
   ): void;
-
   destroy(): void;
 }
 
@@ -26,235 +43,297 @@ interface SpotifyIFrameAPI {
   ): void;
 }
 
+interface PlaybackSnapshot {
+  positionMs: number;
+  isPaused: boolean;
+  isBuffering: boolean;
+  playingUri: string;
+}
+
 declare global {
   interface Window {
     onSpotifyIframeApiReady?: (api: SpotifyIFrameAPI) => void;
-
     __spotifyIframeAPI?: SpotifyIFrameAPI;
-
     __spotifyIframePromise?: Promise<SpotifyIFrameAPI>;
   }
 }
 
 const SCRIPT_ID = "spotify-iframe-api";
-
 const SCRIPT_URL = "https://open.spotify.com/embed/iframe-api/v1";
 
-/**
- * Charge l'API UNE SEULE FOIS.
- *
- * Ensuite on garde nous-mêmes IFrameAPI en mémoire,
- * car Spotify ne rappelle pas forcément
- * onSpotifyIframeApiReady après une navigation Next.
- */
 function loadSpotifyIFrameAPI(): Promise<SpotifyIFrameAPI> {
   if (window.__spotifyIframeAPI) {
-    console.log("♻️ Spotify API already cached");
-
     return Promise.resolve(window.__spotifyIframeAPI);
   }
 
   if (window.__spotifyIframePromise) {
-    console.log("⏳ Spotify API already loading");
-
     return window.__spotifyIframePromise;
   }
 
   window.__spotifyIframePromise = new Promise<SpotifyIFrameAPI>(
     (resolve, reject) => {
       window.onSpotifyIframeApiReady = (api) => {
-        console.log("✅ Spotify IFrameAPI received");
-
-        // IMPORTANT :
-        // on garde la référence nous-mêmes.
         window.__spotifyIframeAPI = api;
-
         resolve(api);
       };
 
-      let existingScript = document.getElementById(SCRIPT_ID);
-
-      /*
-       * Cas développement / Hot Reload :
-       *
-       * le script peut déjà être présent
-       * alors que notre cache n'existe pas.
-       *
-       * On le recharge.
-       */
-      if (existingScript) {
-        console.log(
-          "♻️ Spotify script exists but API isn't cached — reloading script",
-        );
-
-        existingScript.remove();
-        existingScript = null;
-      }
+      document.getElementById(SCRIPT_ID)?.remove();
 
       const script = document.createElement("script");
-
       script.id = SCRIPT_ID;
       script.src = SCRIPT_URL;
       script.async = true;
-
       script.onerror = () => {
-        console.error("❌ Spotify API script failed");
-
         window.__spotifyIframePromise = undefined;
-
         reject(new Error("Spotify iframe API failed to load"));
       };
 
       document.body.appendChild(script);
-
-      console.log("📥 Spotify iframe script added");
     },
   );
 
   return window.__spotifyIframePromise;
 }
 
-export function useSpotifyTracker(spotifyUrl: string) {
-  /*
-   * IMPORTANT :
-   *
-   * React garde ce DIV.
-   *
-   * Spotify ne remplacera PAS directement
-   * ce DIV. On créera un enfant dedans.
-   */
+export function useSpotifyTracker(
+  spotifyUrl: string,
+  submittedTrackId: string,
+) {
   const embedContainerRef = useRef<HTMLDivElement>(null);
-
-  const controllerRef = useRef<SpotifyEmbedController | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const statusRef = useRef<ListeningSessionStatus | null>(null);
+  const latestPlaybackRef = useRef<PlaybackSnapshot | null>(null);
+  const startInFlightRef = useRef(false);
+  const heartbeatInFlightRef = useRef(false);
 
   const [listenedMs, setListenedMs] = useState(0);
-
+  const [requiredMs, setRequiredMs] = useState<number | null>(null);
+  const [heartbeatIntervalMs, setHeartbeatIntervalMs] = useState<
+    number | null
+  >(null);
+  const [listeningStatus, setListeningStatus] =
+    useState<ListeningSessionStatus | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [listeningError, setListeningError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-
   const [ready, setReady] = useState(false);
 
-  const lastPositionRef = useRef<number | null>(null);
+  const applyServerResult = useCallback((result: ListeningSessionResult) => {
+    if (result.minDurationMs !== null) {
+      setRequiredMs(result.minDurationMs);
+    }
+    if (result.heartbeatIntervalMs !== null) {
+      setHeartbeatIntervalMs(result.heartbeatIntervalMs);
+    }
 
-  const lastTimestampRef = useRef<number | null>(null);
+    setListenedMs(Math.max(0, result.listenedMs));
 
-  const resetListening = useCallback(() => {
-    setListenedMs(0);
-    setIsPlaying(false);
+    if (result.status) {
+      statusRef.current = result.status;
+      setListeningStatus(result.status);
+    }
 
-    lastPositionRef.current = null;
+    if (result.sessionId) {
+      sessionIdRef.current = result.sessionId;
+      setSessionId(result.sessionId);
+    }
 
-    lastTimestampRef.current = null;
+    if (result.success) {
+      setListeningError(null);
+    } else if (result.message) {
+      setListeningError(result.message);
+    }
+
+    if (result.status === "invalid" || result.status === "abandoned") {
+      sessionIdRef.current = null;
+      setSessionId(null);
+    }
   }, []);
 
-  const handlePlaybackUpdate = useCallback((event: any) => {
-    const { position, isPaused, isBuffering, playingURI } = event.data;
+  const ensureSession = useCallback(
+    async (snapshot: PlaybackSnapshot) => {
+      if (
+        sessionIdRef.current ||
+        startInFlightRef.current ||
+        statusRef.current === "completed" ||
+        statusRef.current === "rewarded"
+      ) {
+        return;
+      }
 
-    const now = Date.now();
+      startInFlightRef.current = true;
+      try {
+        const result = await startListeningSession(
+          submittedTrackId,
+          snapshot.positionMs,
+          snapshot.playingUri,
+        );
+        applyServerResult(result);
+      } catch (error) {
+        console.error("Unable to start verified listening:", error);
+        setListeningError("The verified listening session could not start.");
+      } finally {
+        startInFlightRef.current = false;
+      }
+    },
+    [applyServerResult, submittedTrackId],
+  );
 
-    if (isPaused || isBuffering) {
-      setIsPlaying(false);
+  const sendHeartbeat = useCallback(async () => {
+    const currentSessionId = sessionIdRef.current;
+    const snapshot = latestPlaybackRef.current;
 
-      lastPositionRef.current = position;
-
-      lastTimestampRef.current = now;
-
+    if (
+      !currentSessionId ||
+      !snapshot ||
+      heartbeatInFlightRef.current ||
+      statusRef.current !== "active"
+    ) {
       return;
     }
 
-    setIsPlaying(true);
+    heartbeatInFlightRef.current = true;
+    try {
+      const result = await heartbeatListeningSession(
+        currentSessionId,
+        snapshot.positionMs,
+        snapshot.isPaused || document.hidden,
+        snapshot.isBuffering,
+        snapshot.playingUri,
+      );
+      applyServerResult(result);
+    } catch (error) {
+      console.error("Verified listening heartbeat failed:", error);
+      setListeningError("Listening verification lost connection.");
+    } finally {
+      heartbeatInFlightRef.current = false;
+    }
+  }, [applyServerResult]);
 
-    const previousPosition = lastPositionRef.current;
+  const handlePlaybackUpdate = useCallback(
+    (event: SpotifyIFrameEvent) => {
+      const data = event.data;
+      const positionMs = Math.trunc(Number(data?.position));
+      const playingUri = data?.playingURI;
+      const isPaused = data?.isPaused !== false;
+      const isBuffering = data?.isBuffering === true;
 
-    const previousTimestamp = lastTimestampRef.current;
-
-    if (previousPosition !== null && previousTimestamp !== null) {
-      const positionDelta = position - previousPosition;
-
-      const realTimeDelta = now - previousTimestamp;
-
-      /*
-       * Protection basique contre le seek :
-       *
-       * la position Spotify doit avancer
-       * globalement au même rythme
-       * que le vrai temps.
-       */
-      const validPlayback =
-        positionDelta > 0 &&
-        realTimeDelta > 0 &&
-        positionDelta <= realTimeDelta + 1500 &&
-        realTimeDelta < 5000;
-
-      if (validPlayback && !document.hidden) {
-        const validMs = Math.min(positionDelta, realTimeDelta);
-
-        setListenedMs((current) => Math.min(current + validMs, TARGET_MS));
+      if (
+        !Number.isFinite(positionMs) ||
+        positionMs < 0 ||
+        typeof playingUri !== "string"
+      ) {
+        return;
       }
+
+      const snapshot: PlaybackSnapshot = {
+        positionMs,
+        isPaused,
+        isBuffering,
+        playingUri,
+      };
+
+      latestPlaybackRef.current = snapshot;
+      const activelyPlaying = !isPaused && !isBuffering && !document.hidden;
+      setIsPlaying(activelyPlaying);
+
+      if (activelyPlaying) {
+        void ensureSession(snapshot);
+      }
+    },
+    [ensureSession],
+  );
+
+  const resetListening = useCallback(() => {
+    const currentSessionId = sessionIdRef.current;
+    if (currentSessionId && statusRef.current === "active") {
+      void abandonListeningSession(currentSessionId);
     }
 
-    lastPositionRef.current = position;
-
-    lastTimestampRef.current = now;
-
-    console.log("🎵 playback_update", {
-      playingURI,
-      position,
-      isPaused,
-      isBuffering,
-    });
+    sessionIdRef.current = null;
+    statusRef.current = null;
+    latestPlaybackRef.current = null;
+    setSessionId(null);
+    setListeningStatus(null);
+    setListenedMs(0);
+    setListeningError(null);
+    setIsPlaying(false);
   }, []);
 
   useEffect(() => {
-    const host = embedContainerRef.current;
+    let cancelled = false;
 
+    getListeningConfig()
+      .then((result) => {
+        if (cancelled) return;
+
+        if (result.minDurationMs !== null) {
+          setRequiredMs(result.minDurationMs);
+        }
+        if (result.heartbeatIntervalMs !== null) {
+          setHeartbeatIntervalMs(result.heartbeatIntervalMs);
+        }
+        if (!result.success && result.message) {
+          setListeningError(result.message);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error("Unable to load listening configuration:", error);
+          setListeningError("Listening verification is unavailable.");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      !heartbeatIntervalMs ||
+      !sessionId ||
+      listeningStatus !== "active"
+    ) {
+      return;
+    }
+
+    const heartbeatTimer = window.setInterval(() => {
+      void sendHeartbeat();
+    }, heartbeatIntervalMs);
+
+    return () => window.clearInterval(heartbeatTimer);
+  }, [heartbeatIntervalMs, listeningStatus, sendHeartbeat, sessionId]);
+
+  useEffect(() => {
+    const host = embedContainerRef.current;
     if (!spotifyUrl || !host) {
       return;
     }
 
-    console.log("🚀 Spotify mount:", spotifyUrl);
-
     let cancelled = false;
-
     let localController: SpotifyEmbedController | null = null;
 
-    /*
-     * Nettoyage d'un éventuel ancien player.
-     */
     host.replaceChildren();
-
-    /*
-     * Spotify va remplacer CE div,
-     * pas notre host React.
-     */
     const spotifyMountPoint = document.createElement("div");
-
     host.appendChild(spotifyMountPoint);
 
+    sessionIdRef.current = null;
+    statusRef.current = null;
+    latestPlaybackRef.current = null;
+    setSessionId(null);
+    setListeningStatus(null);
+    setListenedMs(0);
+    setListeningError(null);
     setReady(false);
     setIsPlaying(false);
-    setListenedMs(0);
-
-    lastPositionRef.current = null;
-
-    lastTimestampRef.current = null;
 
     const initialize = async () => {
       try {
-        const IFrameAPI = await loadSpotifyIFrameAPI();
+        const iframeApi = await loadSpotifyIFrameAPI();
+        if (cancelled) return;
 
-        /*
-         * Le user a pu changer de page
-         * pendant le chargement.
-         */
-        if (cancelled) {
-          console.log("⚠️ Component gone before Spotify API loaded");
-
-          return;
-        }
-
-        console.log("🎯 Creating Spotify controller:", spotifyUrl);
-
-        IFrameAPI.createController(
+        iframeApi.createController(
           spotifyMountPoint,
           {
             url: spotifyUrl,
@@ -262,94 +341,59 @@ export function useSpotifyTracker(spotifyUrl: string) {
             height: 152,
           },
           (controller) => {
-            /*
-             * createController est async-ish :
-             * navigation possible entre temps.
-             */
             if (cancelled) {
-              console.log("⚠️ Controller created after unmount — destroying");
-
               controller.destroy();
-
               return;
             }
 
-            console.log("✅ Spotify controller created");
-
             localController = controller;
-
-            controllerRef.current = controller;
-
             controller.addListener("ready", () => {
-              if (cancelled) return;
-
-              console.log("✅ Spotify embed ready");
-
-              setReady(true);
+              if (!cancelled) setReady(true);
             });
-
-            controller.addListener("playback_started", (event) => {
-              if (cancelled) return;
-
-              console.log("▶️ Playback started:", event.data.playingURI);
-
-              setIsPlaying(true);
+            controller.addListener("playback_started", () => {
+              if (!cancelled) setIsPlaying(true);
             });
-
             controller.addListener("playback_update", (event) => {
-              if (cancelled) return;
-
-              handlePlaybackUpdate(event);
+              if (!cancelled) handlePlaybackUpdate(event);
             });
           },
         );
       } catch (error) {
         if (!cancelled) {
-          console.error("❌ Spotify initialization error:", error);
+          console.error("Spotify initialization failed:", error);
+          setListeningError("The Spotify player could not be initialized.");
         }
       }
     };
 
-    initialize();
+    void initialize();
 
     return () => {
-      console.log("🧹 Spotify component unmount");
-
       cancelled = true;
-
-      /*
-       * On détruit LE PLAYER.
-       *
-       * Mais on ne détruit PAS IFrameAPI :
-       * elle reste dans window.__spotifyIframeAPI.
-       */
-      if (localController) {
-        localController.destroy();
-
-        localController = null;
-      }
-
-      controllerRef.current = null;
-
-      /*
-       * Évite de toucher au DOM
-       * s'il a déjà disparu.
-       */
+      localController?.destroy();
       if (host.isConnected) {
         host.replaceChildren();
       }
     };
-  }, [spotifyUrl, handlePlaybackUpdate]);
+  }, [handlePlaybackUpdate, spotifyUrl]);
+
+  const isListeningComplete =
+    listeningStatus === "completed" || listeningStatus === "rewarded";
+  const progressPercent = requiredMs
+    ? Math.min((listenedMs / requiredMs) * 100, 100)
+    : 0;
 
   return {
     embedContainerRef,
     ready,
     isPlaying,
     listenedMs,
+    requiredMs,
+    progressPercent,
+    isListeningComplete,
+    listeningError,
+    listeningStatus,
+    sessionId,
     resetListening,
-
-    hasReached60Seconds: listenedMs >= TARGET_MS,
-
-    progressPercent: Math.min(listenedMs / TARGET_MS, 1) * 100,
   };
 }
