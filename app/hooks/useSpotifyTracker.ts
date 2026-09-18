@@ -177,7 +177,7 @@ export function useSpotifyTracker(
     if (
       !inactive &&
       lastHeartbeatPositionRef.current !== null &&
-      snapshot.positionMs <= lastHeartbeatPositionRef.current
+      snapshot.positionMs === lastHeartbeatPositionRef.current
     ) {
       setIsPlaying(false);
       return;

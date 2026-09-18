@@ -15,6 +15,30 @@ export interface SpotifyOEmbedResponse {
   embedUrl?: string;
 }
 
+export const MUSIC_GENRES = [
+  "Pop",
+  "Hip-Hop / Rap",
+  "Electronic",
+  "R&B / Soul",
+  "Rock",
+  "Latin",
+  "Afrobeats",
+  "Country",
+  "Folk",
+  "Jazz",
+  "Classical",
+  "Other",
+] as const;
+
+export type MusicGenre = (typeof MUSIC_GENRES)[number];
+
+export function isMusicGenre(value: unknown): value is MusicGenre {
+  return (
+    typeof value === "string" &&
+    (MUSIC_GENRES as readonly string[]).includes(value)
+  );
+}
+
 // Track data for our app
 export interface Track {
   id: string;
@@ -23,6 +47,7 @@ export interface Track {
   trackId: string; // Spotify track ID - used to reconstruct URLs dynamically
   creditsRemaining?: number; // Number of credits still available for this track
   status?: string; // 'active' or 'pending'
+  genres: MusicGenre[];
 }
 
 // Spotify iFrame API events
@@ -74,6 +99,7 @@ export interface SubmittedTrack {
   title: string;
   cover_url: string;
   created_at: string;
+  genres: MusicGenre[];
 }
 
 // Utility functions to generate Spotify URLs and embeds from trackId

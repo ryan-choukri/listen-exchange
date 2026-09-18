@@ -6,9 +6,13 @@ import { Input } from "@/app/components/Input";
 import { AppShell } from "@/app/components/AppShell";
 import { PageHeader } from "@/app/components/PageHeader";
 import { Icon, Notice, Surface } from "@/app/components/ui/design-system";
-import { SpotifyOEmbedResponse } from "@/app/types/spotify";
+import {
+  SpotifyOEmbedResponse,
+  type MusicGenre,
+} from "@/app/types/spotify";
 import { submitTrack } from "@/app/actions/submit";
 import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
+import { GenreSelector } from "@/app/components/music/GenreSelector";
 
 export default function MyTracksPage() {
   const [url, setUrl] = useState("");
@@ -21,6 +25,7 @@ export default function MyTracksPage() {
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedGenres, setSelectedGenres] = useState<MusicGenre[]>([]);
 
   const validateUrl = (urlStr: string): boolean => {
     try {
@@ -37,6 +42,7 @@ export default function MyTracksPage() {
   const handleFetchOembed = async () => {
     setError("");
     setOembedData(null);
+    setSelectedGenres([]);
 
     if (!url.trim()) {
       setError("Please enter a Spotify track URL");
@@ -83,6 +89,11 @@ export default function MyTracksPage() {
       return;
     }
 
+    if (selectedGenres.length === 0) {
+      setError("Select at least one genre");
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
     setSuccess(false);
@@ -92,6 +103,7 @@ export default function MyTracksPage() {
         previewUrl,
         oembedData.title,
         oembedData.thumbnail_url,
+        selectedGenres,
       );
 
       if (result.success) {
@@ -99,6 +111,7 @@ export default function MyTracksPage() {
         setSuccessMessage(result.message);
         setUrl("");
         setOembedData(null);
+        setSelectedGenres([]);
         // Refresh the UserTracksStats component
         setRefreshKey((prev) => prev + 1);
         // Clear success message after 3 seconds
@@ -229,6 +242,14 @@ export default function MyTracksPage() {
                 dangerouslySetInnerHTML={{ __html: oembedData.html }}
               />
 
+              <GenreSelector
+                value={selectedGenres}
+                onChange={(genres) => {
+                  setSelectedGenres(genres);
+                  setError("");
+                }}
+              />
+
               {error && (
                 <Notice tone="danger" title="Track could not be submitted">
                   {error}
@@ -244,6 +265,7 @@ export default function MyTracksPage() {
               <Button
                 onClick={handleAddTrack}
                 loading={isSubmitting}
+                disabled={selectedGenres.length === 0}
                 icon="upload"
                 className="w-full"
               >

@@ -1,15 +1,18 @@
 import { Badge, StatusBadge } from "@/app/components/ui/design-system";
+import type { MusicGenre } from "@/app/types/spotify";
 
 export function TrackHeader({
   title,
   coverUrl,
   status,
   creditsRemaining,
+  genres,
 }: {
   title: string;
   coverUrl: string;
   status?: string;
   creditsRemaining?: number;
+  genres: MusicGenre[];
 }) {
   return (
     <header className="flex items-center gap-4">
@@ -28,7 +31,9 @@ export function TrackHeader({
           {title}
         </h2>
         <div className="mt-2 flex flex-wrap gap-2">
-          <Badge tone="coral">Independent</Badge>
+          <Badge tone="coral" className="max-w-full truncate">
+            {genres.join(" · ")}
+          </Badge>
           {status === "active" || status === "pending" ? (
             <StatusBadge status={status} />
           ) : null}

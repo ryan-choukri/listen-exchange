@@ -111,6 +111,7 @@ export function TrackCard({
           coverUrl={track.coverUrl}
           status={track.status}
           creditsRemaining={track.creditsRemaining}
+          genres={track.genres}
         />
         <div className="mt-5">
           <SpotifyPlayer

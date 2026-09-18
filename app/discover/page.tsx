@@ -60,6 +60,7 @@ export default function DiscoverPage() {
             trackId: track.track_id,
             creditsRemaining: track.credits_remaining,
             status: track.status,
+            genres: track.genres,
           }));
           setTracks(convertedTracks);
         }
@@ -86,6 +87,15 @@ export default function DiscoverPage() {
 
       if (result.success) {
         announceCreditsUpdated(result.new_credits ?? undefined);
+
+        if (currentTrack) {
+          setTracks((previousTracks) =>
+            previousTracks.filter((track) => track.id !== currentTrack.id),
+          );
+          setCurrentTrackIndex((index) =>
+            Math.min(index, Math.max(0, tracks.length - 2)),
+          );
+        }
 
         // Refresh feedbacks
         try {

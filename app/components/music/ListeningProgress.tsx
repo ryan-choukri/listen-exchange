@@ -28,7 +28,7 @@ export function ListeningProgress({
         tone={complete ? "success" : "coral"}
         label={
           requiredSeconds
-            ? `Listen for ${requiredSeconds} seconds`
+            ? `Listen for ${requiredSeconds} seconds without interruption`
             : "Loading verification rules…"
         }
         detail={

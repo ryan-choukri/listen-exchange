@@ -1,6 +1,10 @@
 "use server";
 
 import { getAuthenticatedClient } from "@/app/lib/auth/get-authenticated-client";
+import {
+  isMusicGenre,
+  type MusicGenre,
+} from "@/app/types/spotify";
 
 export interface SubmitTrackResponse {
   success: boolean;
@@ -34,6 +38,17 @@ interface UserSubmittedTrack {
   feedbacks: SubmittedTrackFeedback[];
 }
 
+interface DiscoverTrack {
+  id: string;
+  track_id: string;
+  title: string;
+  cover_url: string;
+  created_at: string;
+  credits_remaining: number;
+  status: string;
+  genres: MusicGenre[];
+}
+
 function parseSubmittedTrackFeedbacks(value: unknown): SubmittedTrackFeedback[] {
   if (!Array.isArray(value)) {
     return [];
@@ -61,6 +76,25 @@ function parseSubmittedTrackFeedbacks(value: unknown): SubmittedTrackFeedback[] 
       },
     ];
   });
+}
+
+function hasValidGenres(value: unknown): value is MusicGenre[] {
+  return (
+    Array.isArray(value) &&
+    value.length >= 1 &&
+    value.length <= 3 &&
+    value.every(isMusicGenre) &&
+    new Set(value).size === value.length
+  );
+}
+
+function parseMusicGenres(value: unknown): MusicGenre[] {
+  if (!Array.isArray(value)) {
+    return ["Other"];
+  }
+
+  const genres = value.filter(isMusicGenre);
+  return genres.length >= 1 && genres.length <= 3 ? genres : ["Other"];
 }
 
 /**
@@ -222,12 +256,14 @@ export async function getUserSubmittedTracksCount(): Promise<number> {
  * @param url - Spotify track URL
  * @param title - Track title from oEmbed
  * @param coverUrl - Album cover URL from oEmbed
+ * @param genres - One to three selected genres
  * @returns Response with success status and message
  */
 export async function submitTrack(
   url: string,
   title: string,
   coverUrl: string,
+  genres: MusicGenre[],
 ): Promise<SubmitTrackResponse> {
   try {
     // Extract track ID from URL
@@ -251,6 +287,13 @@ export async function submitTrack(
       return {
         success: false,
         message: "Invalid cover URL",
+      };
+    }
+
+    if (!hasValidGenres(genres)) {
+      return {
+        success: false,
+        message: "Select between 1 and 3 valid genres",
       };
     }
 
@@ -286,6 +329,7 @@ export async function submitTrack(
             p_track_id: existing.id,
             p_title: title,
             p_cover_url: coverUrl,
+            p_genres: genres,
           });
 
         if (reactivatedError || !reactivatedData?.length) {
@@ -322,6 +366,7 @@ export async function submitTrack(
         p_track_id: trackId,
         p_title: title,
         p_cover_url: coverUrl,
+        p_genres: genres,
       },
     );
 
@@ -360,47 +405,34 @@ export async function submitTrack(
 }
 
 /**
- * Get all submitted tracks for discovery (excluding user's own tracks)
- * Users cannot give feedback on tracks they submitted themselves
- * @returns Array of submitted tracks sorted by newest first, excluding user's own tracks
+ * Get eligible submitted tracks from the database-filtered Discover queue.
+ * Own tracks and Spotify tracks already rewarded for this listener are excluded.
  */
-export async function getSubmittedTracks(): Promise<
-  Array<{
-    id: string;
-    track_id: string;
-    title: string;
-    cover_url: string;
-    created_at: string;
-    credits_remaining: number;
-    status: string;
-  }>
-> {
+export async function getSubmittedTracks(): Promise<DiscoverTrack[]> {
   try {
     const { supabase, identity } = await getAuthenticatedClient();
 
-    let query = supabase
-      .from("submitted_tracks")
-      .select(
-        "id, track_id, title, cover_url, created_at, credits_remaining, status",
-      )
-      .eq("status", "active")
-      .is("deleted_at", null)
-      .gt("credits_remaining", 0)
-      .order("created_at", { ascending: false });
-
-    // If user is authenticated, exclude their own tracks
-    if (identity) {
-      query = query.neq("user_id", identity.id);
+    if (!identity) {
+      return [];
     }
 
-    const { data, error } = await query;
+    const { data, error } = await supabase.rpc("get_discover_tracks");
 
     if (error) {
       console.error("Error fetching submitted tracks:", error);
       return [];
     }
 
-    return data || [];
+    return ((data || []) as Array<Record<string, unknown>>).map((track) => ({
+      id: String(track.id ?? ""),
+      track_id: String(track.track_id ?? ""),
+      title: String(track.title ?? ""),
+      cover_url: String(track.cover_url ?? ""),
+      created_at: String(track.created_at ?? ""),
+      credits_remaining: Number(track.credits_remaining ?? 0),
+      status: String(track.status ?? "pending"),
+      genres: parseMusicGenres(track.genres),
+    }));
   } catch (err) {
     console.error("Error getting submitted tracks:", err);
     return [];

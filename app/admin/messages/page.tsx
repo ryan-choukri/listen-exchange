@@ -21,7 +21,10 @@ export default async function AdminMessagesPage() {
         minWidth="min-w-[760px]"
       >
         {messages.map((message) => (
-          <tr key={message.message_id} className="transition hover:bg-surface-muted/30">
+          <tr
+            key={message.message_id}
+            className="transition hover:bg-surface-muted/30"
+          >
             <td className="max-w-56 truncate px-5 py-4 font-semibold text-ink">
               {message.email}
             </td>
