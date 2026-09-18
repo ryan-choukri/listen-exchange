@@ -32,8 +32,13 @@ export default async function AdminListeningPage() {
             <td className="max-w-56 truncate px-5 py-4 font-semibold text-ink">
               {session.user_email ?? "Unknown"}
             </td>
-            <td className="max-w-64 truncate px-5 py-4 text-ink">
-              {session.track_title ?? "Unknown track"}
+            <td className="max-w-64 px-5 py-4 text-ink">
+              <span className="block truncate">
+                {session.track_title ?? "Unknown track"}
+              </span>
+              <span className="block truncate text-xs text-muted">
+                {session.artist_name?.trim() || "Unknown artist"}
+              </span>
             </td>
             <td className="whitespace-nowrap px-5 py-4 text-muted">
               {formatDate(session.started_at)}

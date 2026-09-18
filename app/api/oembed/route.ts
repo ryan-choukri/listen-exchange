@@ -2,6 +2,42 @@ import { SpotifyOEmbedResponse } from "@/app/types/spotify";
 import { NextRequest, NextResponse } from "next/server";
 
 const SPOTIFY_TRACK_ID_REGEX = /^[A-Za-z0-9]{22}$/;
+const UNKNOWN_ARTIST = "Unknown artist";
+
+function decodeHtmlEntities(value: string): string {
+  const namedEntities: Record<string, string> = {
+    amp: "&",
+    apos: "'",
+    gt: ">",
+    lt: "<",
+    quot: '"',
+  };
+
+  return value.replace(
+    /&(#x[\da-f]+|#\d+|amp|apos|gt|lt|quot);/gi,
+    (entity, code: string) => {
+      if (code.startsWith("#x") || code.startsWith("#X")) {
+        return String.fromCodePoint(Number.parseInt(code.slice(2), 16));
+      }
+      if (code.startsWith("#")) {
+        return String.fromCodePoint(Number.parseInt(code.slice(1), 10));
+      }
+      return namedEntities[code.toLowerCase()] ?? entity;
+    },
+  );
+}
+
+function extractArtistName(html: string): string | null {
+  const pageTitle = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
+  if (!pageTitle) return null;
+
+  const decodedTitle = decodeHtmlEntities(pageTitle).replace(/\s+/g, " ").trim();
+  const artistName = decodedTitle.match(
+    /^.*\s+[\u2013-]\s+song(?:\s+and\s+lyrics)?\s+by\s+(.+?)\s+\|\s+Spotify\s*$/i,
+  )?.[1];
+
+  return artistName?.trim() || null;
+}
 
 function extractSpotifyTrackId(input: string): string | null {
   const value = input.trim();
@@ -100,9 +136,15 @@ export async function GET(request: NextRequest) {
 
     oembedUrl.searchParams.set("url", spotifyUrl);
 
-    const response = await fetch(oembedUrl.toString(), {
-      signal: AbortSignal.timeout(5000),
-    });
+    const [response, spotifyPageResponse] = await Promise.all([
+      fetch(oembedUrl.toString(), {
+        signal: AbortSignal.timeout(5000),
+      }),
+      fetch(spotifyUrl, {
+        headers: { "Accept-Language": "en" },
+        signal: AbortSignal.timeout(5000),
+      }).catch(() => null),
+    ]);
 
     if (!response.ok) {
       return NextResponse.json(
@@ -119,9 +161,17 @@ export async function GET(request: NextRequest) {
     }
 
     const data: SpotifyOEmbedResponse = await response.json();
+    let artistName = UNKNOWN_ARTIST;
+
+    if (spotifyPageResponse?.ok) {
+      const spotifyPageHtml = await spotifyPageResponse.text();
+      artistName = extractArtistName(spotifyPageHtml) ?? UNKNOWN_ARTIST;
+    }
 
     return NextResponse.json({
       ...data,
+
+      artistName,
 
       trackId,
 

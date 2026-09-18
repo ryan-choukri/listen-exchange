@@ -42,6 +42,7 @@ export interface AdminUserRow {
 export interface AdminTrackRow {
   track_id: string;
   title: string;
+  artist_name: string | null;
   cover_url: string | null;
   owner_email: string | null;
   added_date: string;
@@ -54,6 +55,7 @@ export interface AdminListeningRow {
   session_id: string;
   user_email: string | null;
   track_title: string | null;
+  artist_name: string | null;
   started_at: string;
   validated_duration_ms: number;
   status: string;

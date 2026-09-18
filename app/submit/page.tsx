@@ -102,6 +102,7 @@ export default function SubmitPage() {
       const result = await submitTrack(
         previewUrl,
         oembedData.title,
+        oembedData.artistName?.trim() || "Unknown artist",
         oembedData.thumbnail_url,
         selectedGenres,
       );
@@ -218,7 +219,7 @@ export default function SubmitPage() {
                     {oembedData.title}
                   </h2>
                   <p className="mt-1 text-sm text-muted">
-                    {oembedData.provider_name}
+                    {oembedData.artistName?.trim() || "Unknown artist"}
                   </p>
                 </div>
               </div>

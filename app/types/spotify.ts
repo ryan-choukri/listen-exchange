@@ -13,6 +13,7 @@ export interface SpotifyOEmbedResponse {
   trackId?: string;
   spotifyUrl?: string;
   embedUrl?: string;
+  artistName?: string;
 }
 
 export const MUSIC_GENRES = [
@@ -43,6 +44,7 @@ export function isMusicGenre(value: unknown): value is MusicGenre {
 export interface Track {
   id: string;
   title: string;
+  artistName: string;
   coverUrl: string;
   trackId: string; // Spotify track ID - used to reconstruct URLs dynamically
   creditsRemaining?: number; // Number of credits still available for this track
@@ -97,6 +99,7 @@ export interface SubmittedTrack {
   user_id: string;
   track_id: string;
   title: string;
+  artist_name: string | null;
   cover_url: string;
   created_at: string;
   genres: MusicGenre[];

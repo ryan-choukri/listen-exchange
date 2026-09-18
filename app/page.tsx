@@ -324,6 +324,136 @@ function StepPreview({ step }: { step: number }) {
   );
 }
 
+function ExchangeSystemCard() {
+  const exchangeSteps = [
+    {
+      icon: "play" as const,
+      title: "Listen",
+      description: "Discover tracks from other independent artists",
+      iconClassName: "bg-coral/25 text-coral-strong",
+    },
+    {
+      icon: "message" as const,
+      title: "Give feedback",
+      description: "Leave a real review after listening",
+      iconClassName: "bg-blue-soft/35 text-blue-strong",
+    },
+  ];
+
+  return (
+    <div className="relative mx-auto w-full max-w-md pb-10 pt-6 lg:max-w-none">
+      <aside className="absolute -left-1 top-0 z-0 -rotate-6 rounded-control border border-strong bg-blue-soft px-4 py-3 font-marker text-base leading-tight text-on-accent shadow-card sm:-left-5">
+        Artists
+        <br />
+        support artists.
+        <span className="block text-center text-xl leading-none">♡</span>
+      </aside>
+
+      <Surface className="relative z-10 mt-11 overflow-hidden border-2 border-strong p-4 shadow-raised sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-muted sm:text-xs">
+              The exchange system
+            </p>
+            <h2 className="mt-1.5 text-xl font-black leading-tight tracking-[-0.035em] text-ink sm:text-2xl">
+              Get real Spotify listens
+            </h2>
+            <p className="mt-2 max-w-sm text-xs leading-5 text-muted sm:text-sm">
+              Listen to other artists. Leave real feedback. Get your own track
+              heard on Spotify.
+            </p>
+          </div>
+          <span className="grid size-10 shrink-0 place-items-center rounded-full border border-strong bg-coral text-on-accent shadow-card">
+            <Icon name="headphones" className="size-5" />
+          </span>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {exchangeSteps.map((step) => (
+            <div
+              key={step.title}
+              className="flex items-center gap-3 rounded-control border border-border bg-background/80 px-3 py-2.5"
+            >
+              <span
+                className={`grid size-9 shrink-0 place-items-center rounded-full ${step.iconClassName}`}
+              >
+                <Icon name={step.icon} className="size-4" />
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-sm font-black leading-tight text-ink">
+                  {step.title}
+                </h3>
+                <p className="mt-0.5 text-xs leading-4 text-muted">
+                  {step.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <section className="relative mt-2 overflow-hidden rounded-control border-2 border-lime-strong bg-lime/8 px-3 py-2.5 shadow-highlight">
+          <div className="pointer-events-none absolute -right-8 -top-10 size-28 rounded-full bg-lime/10 blur-2xl" />
+          <div className="relative flex items-center gap-2.5">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full border border-lime bg-lime/20 text-lime-strong">
+              <Icon name="chart" className="size-5" />
+            </span>
+
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-black leading-tight text-ink">
+                Get real Spotify listens
+              </h3>
+              <p className="mt-0.5 text-[11px] leading-4 text-muted">
+                Real artist-to-artist plays.
+              </p>
+              <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-lime px-2.5 py-1 text-[11px] font-black leading-none text-on-accent">
+                +200 listens
+                <Icon name="arrow-up-right" className="size-3.5" />
+              </span>
+            </div>
+
+            <div className="w-20 shrink-0">
+              <Icon
+                name="spotify"
+                className="ml-auto size-6 text-lime-strong"
+              />
+              <svg
+                aria-hidden="true"
+                className="mt-1 h-8 w-full text-lime-strong"
+                viewBox="0 0 90 34"
+                fill="none"
+              >
+                {[12, 19, 16, 25, 22, 31].map((height, index) => (
+                  <rect
+                    key={height + index}
+                    x={5 + index * 14}
+                    y={33 - height}
+                    width="8"
+                    height={height}
+                    rx="1.5"
+                    fill="currentColor"
+                    opacity={0.16 + index * 0.08}
+                  />
+                ))}
+                <path
+                  d="M2 29 14 23 27 25 41 17 54 19 68 9 87 3"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
+        </section>
+      </Surface>
+
+      <p className="absolute bottom-0 right-1 z-20 rotate-2 rounded-control border border-lime-strong bg-lime px-3 py-2 font-marker text-xs text-on-accent shadow-card sm:right-3 sm:text-sm">
+        1 listen given = 1 listen earned.
+      </p>
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <div className="paper-canvas min-h-screen overflow-hidden bg-background text-ink">
@@ -398,67 +528,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-            <div className="absolute -left-8 -top-9 -rotate-6 rounded-control bg-blue-soft px-5 py-4 font-marker text-lg leading-tight text-on-accent shadow-card">
-              Listen.
-              <br />
-              Share.
-              <br />
-              Support.
-            </div>
-            <Surface className="relative overflow-hidden border-2 border-strong p-5 shadow-raised sm:p-7">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                    The exchange System
-                  </p>
-                  <h2 className="mt-2 text-xl font-black text-ink">
-                    Your song gonna be listened
-                  </h2>
-                </div>
-                <span className="grid size-12 shrink-0 place-items-center rounded-full border border-strong bg-coral text-on-accent">
-                  <Icon name="headphones" />
-                </span>
-              </div>
-
-              <div className="mt-7 space-y-3">
-                {[
-                  ["play", "Discover", "Explore independent tracks"],
-                  ["message", "Feedback", "Share meaningful reviews"],
-                  ["trophy", "Earn", "Earn credits for your own tracks"],
-                ].map(([icon, title, description], index) => (
-                  <div
-                    key={title}
-                    className="flex items-center gap-4 rounded-control border border-border bg-background p-3.5"
-                  >
-                    <span
-                      className={`grid size-10 shrink-0 place-items-center rounded-full ${index === 0 ? "bg-coral/25" : index === 1 ? "bg-blue-soft/45" : "bg-lime/50"}`}
-                    >
-                      <Icon
-                        name={icon as "play" | "message" | "trophy"}
-                        className="size-5"
-                      />
-                    </span>
-                    <div>
-                      <h3 className="font-black text-ink">{title}</h3>
-                      <p className="text-sm text-muted">
-                        {index === 2 ? (
-                          <strong className="text-italic text-ink">
-                            {description}
-                          </strong>
-                        ) : (
-                          description
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Surface>
-            <p className="absolute -bottom-10 right-2 rotate-2 rounded-control bg-lime px-4 py-3 font-marker text-base text-on-accent shadow-card">
-              1 credit = 1 artist pushed further.
-            </p>
-          </div>
+          <ExchangeSystemCard />
 
           <HomeScrollCue />
         </section>

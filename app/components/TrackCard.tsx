@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSpotifyTracker } from "@/app/hooks/useSpotifyTracker";
 import type { Track } from "@/app/types/spotify";
 import { getUserTrackFeedback } from "@/app/actions/feedback";
@@ -16,12 +16,14 @@ interface TrackCardProps {
     newCredits?: number;
     error?: string;
   }>;
+  onListeningValidated?: () => void;
   isSubmitting?: boolean;
 }
 
 export function TrackCard({
   track,
   onFeedbackSubmit,
+  onListeningValidated,
   isSubmitting: externalIsSubmitting = false,
 }: TrackCardProps) {
   const [feedback, setFeedback] = useState("");
@@ -29,6 +31,7 @@ export function TrackCard({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [existingFeedback, setExistingFeedback] = useState<string | null>(null);
+  const validationReportedRef = useRef(false);
 
   const spotifyUrl = `https://open.spotify.com/track/${track.trackId}`;
   const {
@@ -43,6 +46,18 @@ export function TrackCard({
     sessionId,
     resetListening,
   } = useSpotifyTracker(spotifyUrl, track.id);
+
+  useEffect(() => {
+    if (!isListeningComplete) {
+      validationReportedRef.current = false;
+      return;
+    }
+
+    if (!validationReportedRef.current) {
+      validationReportedRef.current = true;
+      onListeningValidated?.();
+    }
+  }, [isListeningComplete, onListeningValidated]);
 
   useEffect(() => {
     const checkExistingFeedback = async () => {
@@ -108,6 +123,7 @@ export function TrackCard({
       <div className="p-4 sm:p-6">
         <TrackHeader
           title={track.title}
+          artistName={track.artistName}
           coverUrl={track.coverUrl}
           status={track.status}
           creditsRemaining={track.creditsRemaining}

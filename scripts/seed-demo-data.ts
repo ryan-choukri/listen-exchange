@@ -388,7 +388,8 @@ async function createTracks(
     const owner = users[plan.ownerIndex];
     const { data, error } = await owner.client.rpc("create_submitted_track", {
       p_track_id: plan.id,
-      p_title: `${plan.title} — ${plan.artist}`,
+      p_title: plan.title,
+      p_artist_name: plan.artist,
       p_cover_url: covers.get(plan.id) ?? FALLBACK_COVER_URL,
       p_genres: [
         ...SEED_TRACK_GENRES[plan.index % SEED_TRACK_GENRES.length],

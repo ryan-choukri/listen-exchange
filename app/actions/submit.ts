@@ -30,24 +30,42 @@ interface UserSubmittedTrack {
   id: string;
   track_id: string;
   title: string;
+  artist_name: string;
   cover_url: string;
   created_at: string;
   credits_remaining: number;
   status: string;
+  genres: MusicGenre[];
   feedback_count: number;
   feedbacks: SubmittedTrackFeedback[];
 }
 
-interface DiscoverTrack {
+export interface DiscoverTrack {
   id: string;
   track_id: string;
   title: string;
+  artist_name: string;
   cover_url: string;
   created_at: string;
   credits_remaining: number;
   status: string;
   genres: MusicGenre[];
 }
+
+export interface DiscoverCursor {
+  createdAt: string;
+  id: string;
+}
+
+export interface DiscoverTracksPage {
+  tracks: DiscoverTrack[];
+  nextCursor: DiscoverCursor | null;
+  hasMore: boolean;
+}
+
+const DISCOVER_BATCH_SIZE = 25;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function parseSubmittedTrackFeedbacks(value: unknown): SubmittedTrackFeedback[] {
   if (!Array.isArray(value)) {
@@ -95,6 +113,12 @@ function parseMusicGenres(value: unknown): MusicGenre[] {
 
   const genres = value.filter(isMusicGenre);
   return genres.length >= 1 && genres.length <= 3 ? genres : ["Other"];
+}
+
+function parseArtistName(value: unknown): string {
+  return typeof value === "string" && value.trim()
+    ? value.trim()
+    : "Unknown artist";
 }
 
 /**
@@ -146,10 +170,12 @@ export async function getUserSubmittedTracks(): Promise<
         id: String(track.id ?? ""),
         track_id: String(track.track_id ?? ""),
         title: String(track.title ?? ""),
+        artist_name: parseArtistName(track.artist_name),
         cover_url: String(track.cover_url ?? ""),
         created_at: String(track.created_at ?? ""),
         credits_remaining: Number(track.credits_remaining ?? 0),
         status: String(track.status ?? "pending"),
+        genres: parseMusicGenres(track.genres),
         feedback_count: Number(track.feedback_count ?? 0),
         feedbacks: parseSubmittedTrackFeedbacks(track.feedbacks),
       };
@@ -255,6 +281,7 @@ export async function getUserSubmittedTracksCount(): Promise<number> {
  * Submit a Spotify track to the platform
  * @param url - Spotify track URL
  * @param title - Track title from oEmbed
+ * @param artistName - Artist name from Spotify metadata
  * @param coverUrl - Album cover URL from oEmbed
  * @param genres - One to three selected genres
  * @returns Response with success status and message
@@ -262,6 +289,7 @@ export async function getUserSubmittedTracksCount(): Promise<number> {
 export async function submitTrack(
   url: string,
   title: string,
+  artistName: string,
   coverUrl: string,
   genres: MusicGenre[],
 ): Promise<SubmitTrackResponse> {
@@ -280,6 +308,13 @@ export async function submitTrack(
       return {
         success: false,
         message: "Invalid track title",
+      };
+    }
+
+    if (!artistName?.trim() || artistName.trim().length > 300) {
+      return {
+        success: false,
+        message: "Invalid artist name",
       };
     }
 
@@ -328,6 +363,7 @@ export async function submitTrack(
           await supabase.rpc("reactivate_submitted_track", {
             p_track_id: existing.id,
             p_title: title,
+            p_artist_name: artistName,
             p_cover_url: coverUrl,
             p_genres: genres,
           });
@@ -365,6 +401,7 @@ export async function submitTrack(
       {
         p_track_id: trackId,
         p_title: title,
+        p_artist_name: artistName,
         p_cover_url: coverUrl,
         p_genres: genres,
       },
@@ -408,33 +445,61 @@ export async function submitTrack(
  * Get eligible submitted tracks from the database-filtered Discover queue.
  * Own tracks and Spotify tracks already rewarded for this listener are excluded.
  */
-export async function getSubmittedTracks(): Promise<DiscoverTrack[]> {
+export async function getSubmittedTracks(
+  cursor?: DiscoverCursor,
+): Promise<DiscoverTracksPage> {
   try {
+    if (
+      cursor &&
+      (!UUID_PATTERN.test(cursor.id) ||
+        !Number.isFinite(Date.parse(cursor.createdAt)))
+    ) {
+      return { tracks: [], nextCursor: null, hasMore: false };
+    }
+
     const { supabase, identity } = await getAuthenticatedClient();
 
     if (!identity) {
-      return [];
+      return { tracks: [], nextCursor: null, hasMore: false };
     }
 
-    const { data, error } = await supabase.rpc("get_discover_tracks");
+    const { data, error } = await supabase.rpc("get_discover_tracks", {
+      p_limit: DISCOVER_BATCH_SIZE,
+      p_before_created_at: cursor?.createdAt ?? null,
+      p_before_id: cursor?.id ?? null,
+    });
 
     if (error) {
       console.error("Error fetching submitted tracks:", error);
-      return [];
+      return { tracks: [], nextCursor: null, hasMore: false };
     }
 
-    return ((data || []) as Array<Record<string, unknown>>).map((track) => ({
-      id: String(track.id ?? ""),
-      track_id: String(track.track_id ?? ""),
-      title: String(track.title ?? ""),
-      cover_url: String(track.cover_url ?? ""),
-      created_at: String(track.created_at ?? ""),
-      credits_remaining: Number(track.credits_remaining ?? 0),
-      status: String(track.status ?? "pending"),
-      genres: parseMusicGenres(track.genres),
-    }));
+    const tracks = ((data || []) as Array<Record<string, unknown>>).map(
+      (track) => ({
+        id: String(track.id ?? ""),
+        track_id: String(track.track_id ?? ""),
+        title: String(track.title ?? ""),
+        artist_name: parseArtistName(track.artist_name),
+        cover_url: String(track.cover_url ?? ""),
+        created_at: String(track.created_at ?? ""),
+        credits_remaining: Number(track.credits_remaining ?? 0),
+        status: String(track.status ?? "pending"),
+        genres: parseMusicGenres(track.genres),
+      }),
+    );
+    const lastTrack = tracks.at(-1);
+    const hasMore = tracks.length === DISCOVER_BATCH_SIZE;
+
+    return {
+      tracks,
+      hasMore,
+      nextCursor:
+        hasMore && lastTrack
+          ? { createdAt: lastTrack.created_at, id: lastTrack.id }
+          : null,
+    };
   } catch (err) {
     console.error("Error getting submitted tracks:", err);
-    return [];
+    return { tracks: [], nextCursor: null, hasMore: false };
   }
 }

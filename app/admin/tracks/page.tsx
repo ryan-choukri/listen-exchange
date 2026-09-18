@@ -34,8 +34,13 @@ export default async function AdminTracksPage() {
                 <span className="grid size-9 shrink-0 place-items-center rounded-control bg-coral/15 text-coral-strong">
                   <Icon name="music" className="size-4" />
                 </span>
-                <span className="max-w-64 truncate font-semibold text-ink">
-                  {track.title}
+                <span className="min-w-0 max-w-64">
+                  <span className="block truncate font-semibold text-ink">
+                    {track.title}
+                  </span>
+                  <span className="block truncate text-xs text-muted">
+                    {track.artist_name?.trim() || "Unknown artist"}
+                  </span>
                 </span>
               </div>
             </td>

@@ -3,12 +3,14 @@ import type { MusicGenre } from "@/app/types/spotify";
 
 export function TrackHeader({
   title,
+  artistName,
   coverUrl,
   status,
   creditsRemaining,
   genres,
 }: {
   title: string;
+  artistName: string;
   coverUrl: string;
   status?: string;
   creditsRemaining?: number;
@@ -30,6 +32,9 @@ export function TrackHeader({
         <h2 className="mt-1 truncate text-2xl font-black tracking-tight text-ink sm:text-3xl">
           {title}
         </h2>
+        <p className="truncate text-xs font-medium text-muted sm:text-sm">
+          {artistName}
+        </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <Badge tone="coral" className="max-w-full truncate">
             {genres.join(" · ")}
@@ -37,11 +42,11 @@ export function TrackHeader({
           {status === "active" || status === "pending" ? (
             <StatusBadge status={status} />
           ) : null}
-          {typeof creditsRemaining === "number" && (
+          {/* {typeof creditsRemaining === "number" && (
             <Badge tone="blue">
               {creditsRemaining} {creditsRemaining === 1 ? "credit" : "credits"} left
             </Badge>
-          )}
+          )} */}
         </div>
       </div>
     </header>

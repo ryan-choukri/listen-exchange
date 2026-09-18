@@ -6,6 +6,7 @@ import {
   getUserSubmittedTracks,
 } from "@/app/actions/submit";
 import { announceCreditsUpdated } from "@/app/lib/credits-events";
+import type { MusicGenre } from "@/app/types/spotify";
 import { CreditAllocationModal } from "./CreditAllocationModal";
 import {
   Badge,
@@ -28,10 +29,12 @@ interface SubmittedTrack {
   id: string;
   track_id: string;
   title: string;
+  artist_name: string;
   cover_url: string;
   created_at: string;
   credits_remaining: number;
   status: string;
+  genres: MusicGenre[];
   feedback_count: number;
   feedbacks: SubmittedTrackFeedback[];
 }
@@ -297,12 +300,18 @@ export function UserSubmittedTracksList({
                     <h3 className="truncate text-base font-black text-ink sm:text-lg">
                       {track.title}
                     </h3>
+                    <p className="truncate text-xs font-medium leading-4 text-muted">
+                      {track.artist_name}
+                    </p>
                     <time
                       dateTime={track.created_at}
-                      className="mt-1 block text-xs text-muted sm:text-sm"
+                      className="mt-1 block text-[10px] text-muted sm:text-[11px]"
                     >
                       {formatDate(track.created_at)}
                     </time>
+                    <p className="mt-1 truncate text-[10px] font-semibold text-coral-strong sm:text-xs">
+                      {track.genres.join(" · ")}
+                    </p>
                   </div>
                 </div>
 

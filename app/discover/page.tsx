@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/app/components/Button";
 import { TrackCard } from "@/app/components/TrackCard";
 import { AppShell } from "@/app/components/AppShell";
@@ -9,20 +9,46 @@ import {
   EmptyState,
   LinkButton,
   Notice,
-  ProgressBar,
   Surface,
 } from "@/app/components/ui/design-system";
 import { Track, TrackFeedback } from "@/app/types/spotify";
 import { submitTrackFeedback, getUserFeedbacks } from "@/app/actions/feedback";
-import { getSubmittedTracks } from "@/app/actions/submit";
+import {
+  getSubmittedTracks,
+  type DiscoverCursor,
+  type DiscoverTrack,
+} from "@/app/actions/submit";
 import { announceCreditsUpdated } from "@/app/lib/credits-events";
+
+const PREFETCH_THRESHOLD = 5;
+
+function toTrack(track: DiscoverTrack): Track {
+  return {
+    id: track.id,
+    title: track.title,
+    artistName: track.artist_name,
+    coverUrl: track.cover_url,
+    trackId: track.track_id,
+    creditsRemaining: track.credits_remaining,
+    status: track.status,
+    genres: track.genres,
+  };
+}
 
 export default function DiscoverPage() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [feedbacks, setFeedbacks] = useState<TrackFeedback[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoadingTracks, setIsLoadingTracks] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<DiscoverCursor | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [nextCooldownSeconds, setNextCooldownSeconds] = useState(0);
   const [tracksError, setTracksError] = useState<string | null>(null);
+  const initialLoadStartedRef = useRef(false);
+  const prefetchingRef = useRef(false);
+  const tracksRef = useRef<Track[]>([]);
+  const consecutiveNextClicksRef = useRef(0);
 
   // Load feedbacks on mount
   useEffect(() => {
@@ -42,32 +68,27 @@ export default function DiscoverPage() {
 
   // Load submitted tracks from Supabase
   useEffect(() => {
+    if (initialLoadStartedRef.current) return;
+    initialLoadStartedRef.current = true;
+
     const loadTracks = async () => {
       try {
         setIsLoadingTracks(true);
         setTracksError(null);
-        const submittedTracks = await getSubmittedTracks();
+        const page = await getSubmittedTracks();
+        const initialTracks = page.tracks.map(toTrack);
 
-        if (submittedTracks.length === 0) {
-          setTracks([]);
-          setTracksError(null);
-        } else {
-          // Convert Supabase format to Track format
-          const convertedTracks: Track[] = submittedTracks.map((track) => ({
-            id: track.id,
-            title: track.title,
-            coverUrl: track.cover_url,
-            trackId: track.track_id,
-            creditsRemaining: track.credits_remaining,
-            status: track.status,
-            genres: track.genres,
-          }));
-          setTracks(convertedTracks);
-        }
+        tracksRef.current = initialTracks;
+        setTracks(initialTracks);
+        setNextCursor(page.nextCursor);
+        setHasMore(page.hasMore);
       } catch (err) {
         console.error("Error loading tracks:", err);
         setTracksError("Failed to load tracks. Please refresh the page.");
+        tracksRef.current = [];
         setTracks([]);
+        setNextCursor(null);
+        setHasMore(false);
       } finally {
         setIsLoadingTracks(false);
       }
@@ -76,7 +97,82 @@ export default function DiscoverPage() {
     loadTracks();
   }, []);
 
+  useEffect(() => {
+    const remainingTracks = tracks.length - currentTrackIndex - 1;
+
+    if (
+      isLoadingTracks ||
+      remainingTracks > PREFETCH_THRESHOLD ||
+      !hasMore ||
+      !nextCursor ||
+      prefetchingRef.current
+    ) {
+      return;
+    }
+
+    prefetchingRef.current = true;
+    setIsLoadingMore(true);
+
+    const preloadNextBatch = async () => {
+      try {
+        const page = await getSubmittedTracks(nextCursor);
+
+        setTracks((previousTracks) => {
+          const loadedIds = new Set(previousTracks.map((track) => track.id));
+          const newTracks = page.tracks
+            .filter((track) => !loadedIds.has(track.id))
+            .map(toTrack);
+          const updatedTracks = [...previousTracks, ...newTracks];
+
+          tracksRef.current = updatedTracks;
+          return updatedTracks;
+        });
+        setNextCursor(page.nextCursor);
+        setHasMore(page.hasMore);
+      } catch (err) {
+        console.error("Error preloading tracks:", err);
+        setTracksError("More tracks could not be loaded. Please try again.");
+        setHasMore(false);
+      } finally {
+        prefetchingRef.current = false;
+        setIsLoadingMore(false);
+      }
+    };
+
+    preloadNextBatch();
+  }, [currentTrackIndex, hasMore, isLoadingTracks, nextCursor, tracks.length]);
+
+  useEffect(() => {
+    if (nextCooldownSeconds <= 0) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setNextCooldownSeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [nextCooldownSeconds]);
+
   const currentTrack = tracks[currentTrackIndex];
+
+  const handleNext = () => {
+    if (
+      nextCooldownSeconds > 0 ||
+      currentTrackIndex >= tracks.length - 1
+    ) {
+      return;
+    }
+
+    const nextClickCount = consecutiveNextClicksRef.current + 1;
+    consecutiveNextClicksRef.current = nextClickCount;
+    setCurrentTrackIndex((index) => Math.min(tracks.length - 1, index + 1));
+
+    setNextCooldownSeconds(nextClickCount >= 10 ? 15 : 5);
+  };
+
+  const handleListeningValidated = () => {
+    consecutiveNextClicksRef.current = 0;
+    setNextCooldownSeconds(0);
+  };
 
   const handleFeedbackSubmit = async (
     listeningSessionId: string,
@@ -89,11 +185,14 @@ export default function DiscoverPage() {
         announceCreditsUpdated(result.new_credits ?? undefined);
 
         if (currentTrack) {
-          setTracks((previousTracks) =>
-            previousTracks.filter((track) => track.id !== currentTrack.id),
+          const remainingTracks = tracksRef.current.filter(
+            (track) => track.trackId !== currentTrack.trackId,
           );
+
+          tracksRef.current = remainingTracks;
+          setTracks(remainingTracks);
           setCurrentTrackIndex((index) =>
-            Math.min(index, Math.max(0, tracks.length - 2)),
+            Math.min(index, Math.max(0, remainingTracks.length - 1)),
           );
         }
 
@@ -148,7 +247,7 @@ export default function DiscoverPage() {
           </Notice>
         )}
 
-        {isLoadingTracks ? (
+        {isLoadingTracks || (tracks.length === 0 && hasMore) ? (
           <Surface className="grid min-h-72 place-items-center border-dashed p-6">
             <div className="text-center text-muted">
               <div className="mx-auto mb-4 size-8 animate-spin rounded-full border-2 border-border border-r-coral" />
@@ -168,16 +267,11 @@ export default function DiscoverPage() {
           />
         ) : (
           <div className="space-y-8">
-            <ProgressBar
-              value={((currentTrackIndex + 1) / tracks.length) * 100}
-              label={`Track ${currentTrackIndex + 1} of ${tracks.length}`}
-              detail={`${Math.round(((currentTrackIndex + 1) / tracks.length) * 100)}%`}
-              tone="coral"
-            />
-
             <TrackCard
+              key={currentTrack.id}
               track={currentTrack}
               onFeedbackSubmit={handleFeedbackSubmit}
+              onListeningValidated={handleListeningValidated}
             />
 
             <div className="flex justify-center gap-3">
@@ -192,16 +286,22 @@ export default function DiscoverPage() {
                 Previous
               </Button>
               <Button
-                onClick={() =>
-                  setCurrentTrackIndex(
-                    Math.min(tracks.length - 1, currentTrackIndex + 1),
-                  )
+                onClick={handleNext}
+                disabled={
+                  nextCooldownSeconds > 0 ||
+                  currentTrackIndex === tracks.length - 1
                 }
-                disabled={currentTrackIndex === tracks.length - 1}
+                loading={
+                  nextCooldownSeconds === 0 &&
+                  isLoadingMore &&
+                  currentTrackIndex === tracks.length - 1
+                }
                 variant="secondary"
                 icon="arrow-right"
               >
-                Next
+                {nextCooldownSeconds > 0
+                  ? `Next (${nextCooldownSeconds}s)`
+                  : "Next"}
               </Button>
             </div>
 
@@ -223,6 +323,11 @@ export default function DiscoverPage() {
                         <p className="font-bold text-ink">
                           {track?.title || item.track_id}
                         </p>
+                        {track ? (
+                          <p className="text-xs text-muted">
+                            {track.artistName}
+                          </p>
+                        ) : null}
                         <p className="mt-1 line-clamp-2 text-muted">
                           {item.feedback}
                         </p>

@@ -8,6 +8,7 @@ import {
 import { useCurrentUser } from "@/app/components/CurrentUserProvider";
 import {
   Button,
+  Icon,
   Modal,
   Notice,
   StatusBadge,
@@ -111,6 +112,19 @@ export function CreditAllocationModal({
       : mode === "allocate"
         ? sourceBalance - creditAmount
         : sourceBalance - creditAmount;
+  const maxSelectableAmount =
+    mode === "allocate" ? (userBalance ?? 0) : currentCredits;
+
+  const adjustAmount = (direction: 1 | -1) => {
+    const currentAmount = parseInt(amount, 10) || 0;
+    const nextAmount = Math.min(
+      Math.max(1, maxSelectableAmount),
+      Math.max(1, currentAmount + direction),
+    );
+
+    setAmount(nextAmount.toString());
+    setError(null);
+  };
 
   return (
     <Modal
@@ -190,20 +204,46 @@ export function CreditAllocationModal({
             Credits to {mode === "allocate" ? "allocate" : "return"}
           </label>
           <div className="mt-2 flex items-center gap-2">
-            <input
-              id="amount"
-              type="number"
-              min="1"
-              max={
-                mode === "allocate"
-                  ? (userBalance ?? 0)
-                  : currentCredits || 1000
-              }
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
-              disabled={isLoading}
-              className="min-w-0 flex-1 rounded-control border border-border bg-surface px-3 py-2.5 text-center text-lg font-black text-ink outline-none focus:border-blue-strong focus:ring-2 focus:ring-blue-soft disabled:bg-surface-muted"
-            />
+            <div className="relative min-w-0 flex-1">
+              <input
+                id="amount"
+                type="number"
+                min="1"
+                max={
+                  mode === "allocate"
+                    ? (userBalance ?? 0)
+                    : currentCredits || 1000
+                }
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                disabled={isLoading}
+                className="w-full appearance-none rounded-control border border-border bg-surface px-3 py-2.5 text-center text-lg font-black text-ink outline-none [appearance:textfield] focus:border-blue-strong focus:ring-2 focus:ring-blue-soft disabled:bg-surface-muted [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <div className="absolute bottom-px right-px top-px grid w-10 grid-rows-2 overflow-hidden rounded-r-control border-l border-blue-strong/35 bg-blue-soft/15">
+                <button
+                  type="button"
+                  aria-label="Increase credits"
+                  onClick={() => adjustAmount(1)}
+                  disabled={
+                    isLoading ||
+                    isUserLoading ||
+                    creditAmount >= maxSelectableAmount
+                  }
+                  className="grid place-items-center text-blue-strong transition hover:bg-blue-soft/30 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-strong disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <Icon name="chevron-down" className="size-4 rotate-180" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Decrease credits"
+                  onClick={() => adjustAmount(-1)}
+                  disabled={isLoading || creditAmount <= 1}
+                  className="grid place-items-center border-t border-blue-strong/35 text-blue-strong transition hover:bg-blue-soft/30 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-strong disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <Icon name="chevron-down" className="size-4" />
+                </button>
+              </div>
+            </div>
             <div className="flex gap-1">
               {[1, 5, 10].map((number) => (
                 <button
