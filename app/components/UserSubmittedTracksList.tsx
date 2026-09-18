@@ -6,6 +6,7 @@ import {
   getUserSubmittedTracks,
 } from "@/app/actions/submit";
 import { announceCreditsUpdated } from "@/app/lib/credits-events";
+import { announceOnboardingStateChanged } from "@/app/lib/onboarding";
 import type { MusicGenre } from "@/app/types/spotify";
 import { CreditAllocationModal } from "./CreditAllocationModal";
 import {
@@ -172,6 +173,7 @@ export function UserSubmittedTracksList({
         );
         setDeleteSuccess(result.message);
         announceCreditsUpdated(result.creditsBalance);
+        announceOnboardingStateChanged();
         onTrackDeleted?.();
       } else {
         setDeleteError(result.message);
@@ -276,7 +278,7 @@ export function UserSubmittedTracksList({
       )}
 
       <div className="space-y-3 p-3 sm:p-4">
-        {tracks.map((track) => {
+        {tracks.map((track, trackIndex) => {
           const isExpanded = expandedTrackId === track.id;
           const feedbackLabel =
             track.feedback_count === 1 ? "feedback" : "feedbacks";
@@ -342,6 +344,9 @@ export function UserSubmittedTracksList({
                   </button>
                   <Button
                     onClick={() => handleAllocateClick(track)}
+                    data-onboarding-target={
+                      trackIndex === 0 ? "allocate-track" : undefined
+                    }
                     variant="secondary"
                     size="sm"
                     icon="wallet"

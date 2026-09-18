@@ -254,3 +254,48 @@ iframe[src*="spotify.com"] {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }
+
+/* Lightweight coach marks: no page scrim, only the active control is emphasized. */
+.onboarding-target-active {
+  position: relative;
+  z-index: 70;
+  outline: 1px solid var(--onboarding-accent);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--onboarding-accent) 14%, transparent),
+    0 0 20px color-mix(in srgb, var(--onboarding-accent) 28%, transparent) !important;
+  animation: onboarding-target-breathe 2.6s ease-in-out infinite;
+}
+
+.onboarding-arrow-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: onboarding-arrow-draw 520ms ease-out forwards;
+}
+
+@keyframes onboarding-arrow-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes onboarding-target-breathe {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-target-active,
+  .onboarding-arrow-path {
+    animation: none;
+  }
+
+  .onboarding-arrow-path {
+    stroke-dashoffset: 0;
+  }
+}

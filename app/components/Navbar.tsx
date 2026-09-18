@@ -42,6 +42,7 @@ export function Navbar() {
       label: "Discover",
       icon: "home",
       active: pathname === "/discover",
+      onboardingTarget: "discover-navigation",
     },
     {
       href: "/submit",

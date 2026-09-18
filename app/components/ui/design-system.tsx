@@ -869,6 +869,7 @@ export interface NavigationItem {
   icon: IconName;
   label: string;
   active?: boolean;
+  onboardingTarget?: string;
 }
 
 const demoNavigationItems: NavigationItem[] = [
@@ -896,6 +897,7 @@ export function AppSidebar({
           <Link
             href={link.href}
             key={link.label}
+            data-onboarding-target={link.onboardingTarget}
             className={joinClasses(
               "flex items-center gap-3 rounded-control px-3 py-2.5 text-sm font-semibold transition",
               link.active
@@ -948,6 +950,7 @@ export function MobileNav({
         <Link
           href={link.href}
           key={link.label}
+          data-onboarding-target={link.onboardingTarget}
           className={joinClasses(
             "flex flex-col items-center gap-1 rounded-control py-1.5 text-[10px] font-semibold",
             link.active ? "text-coral-strong" : "text-muted",

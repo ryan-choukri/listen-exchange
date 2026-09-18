@@ -14,6 +14,7 @@ import {
   StatusBadge,
 } from "@/app/components/ui/design-system";
 import { announceCreditsUpdated } from "@/app/lib/credits-events";
+import { announceOnboardingStateChanged } from "@/app/lib/onboarding";
 
 interface CreditAllocationModalProps {
   trackId: string;
@@ -66,6 +67,7 @@ export function CreditAllocationModal({
         const result = await allocateTracksCredits(trackId, listenAmount);
         if (result.success) {
           announceCreditsUpdated(result.credits_balance);
+          announceOnboardingStateChanged();
           onSuccess();
           onClose();
         } else {

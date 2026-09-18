@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Navbar } from "@/app/components/Navbar";
+import { OnboardingCoachMarks } from "@/app/components/onboarding/OnboardingCoachMarks";
 
 export function AppShell({
   children,
@@ -17,6 +18,7 @@ export function AppShell({
   return (
     <div className="paper-canvas min-h-screen bg-background text-ink">
       <Navbar />
+      <OnboardingCoachMarks />
       <main className="pb-24 lg:ml-56 lg:pb-0">
         <div
           className={`mx-auto ${widths[width]} px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12`}

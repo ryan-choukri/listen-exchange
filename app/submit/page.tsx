@@ -13,6 +13,10 @@ import {
 import { submitTrack } from "@/app/actions/submit";
 import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
 import { GenreSelector } from "@/app/components/music/GenreSelector";
+import {
+  announceOnboardingPreviewReady,
+  announceOnboardingStateChanged,
+} from "@/app/lib/onboarding";
 
 export default function SubmitPage() {
   const [url, setUrl] = useState("");
@@ -68,6 +72,7 @@ export default function SubmitPage() {
 
       const data = await response.json();
       setOembedData(data);
+      announceOnboardingPreviewReady();
     } catch (err) {
       setError(
         err instanceof Error
@@ -115,6 +120,7 @@ export default function SubmitPage() {
         setSelectedGenres([]);
         // Refresh the UserTracksStats component
         setRefreshKey((prev) => prev + 1);
+        announceOnboardingStateChanged();
         // Clear success message after 3 seconds
         setTimeout(() => {
           setSuccess(false);
@@ -176,6 +182,7 @@ export default function SubmitPage() {
               label="Spotify track URL"
               placeholder="https://open.spotify.com/track/..."
               value={url}
+              data-onboarding-target="submit-track"
               onChange={(e) => {
                 setUrl(e.target.value);
                 setError("");
@@ -257,6 +264,7 @@ export default function SubmitPage() {
                 disabled={selectedGenres.length === 0}
                 icon="upload"
                 className="w-full"
+                data-onboarding-target="add-track"
               >
                 Add This Track
               </Button>
