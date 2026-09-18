@@ -45,9 +45,11 @@ export type IconName =
 export function Icon({
   name,
   className = "size-5",
+  stroke = "currentColor",
 }: {
   name: IconName;
   className?: string;
+  stroke?: string;
 }) {
   const paths: Record<IconName, ReactNode> = {
     alert: (
@@ -169,7 +171,7 @@ export function Icon({
         <circle cx="12" cy="12" r="10" fill="currentColor" stroke="none" />
         <path
           d="M7 9.4c3.8-1.1 7.7-.7 10.5.8M7.8 12.8c3.1-.8 6.4-.5 8.9.8M8.7 16c2.5-.6 5-.3 7 .7"
-          stroke="white"
+          stroke={stroke || "white"}
         />
       </>
     ),

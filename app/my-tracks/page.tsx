@@ -6,10 +6,7 @@ import { Input } from "@/app/components/Input";
 import { AppShell } from "@/app/components/AppShell";
 import { PageHeader } from "@/app/components/PageHeader";
 import { Icon, Notice, Surface } from "@/app/components/ui/design-system";
-import {
-  SpotifyOEmbedResponse,
-  type MusicGenre,
-} from "@/app/types/spotify";
+import { SpotifyOEmbedResponse, type MusicGenre } from "@/app/types/spotify";
 import { submitTrack } from "@/app/actions/submit";
 import { UserSubmittedTracksList } from "@/app/components/UserSubmittedTracksList";
 import { GenreSelector } from "@/app/components/music/GenreSelector";
@@ -172,7 +169,7 @@ export default function MyTracksPage() {
         </h2>
         <Surface className="p-5 sm:p-6">
           <div className="flex items-start gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-coral/20 text-coral-strong">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-coral/20 text-lime-strong">
               <Icon name="spotify" />
             </span>
             <div>
@@ -285,13 +282,13 @@ export default function MyTracksPage() {
           </Surface>
         )}
 
-        <Notice tone="info" title="Tips">
+        {/* <Notice tone="info" title="Tips">
           <ul className="space-y-1">
             <li>• Share original or curated independent tracks</li>
             <li>• Make sure the Spotify link is a direct track link</li>
             <li>• Tracks will appear in the discovery queue</li>
           </ul>
-        </Notice>
+        </Notice> */}
       </div>
     </AppShell>
   );
