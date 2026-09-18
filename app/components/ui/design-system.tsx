@@ -45,7 +45,7 @@ export type IconName =
 export function Icon({
   name,
   className = "size-5",
-  stroke = "currentColor",
+  stroke,
 }: {
   name: IconName;
   className?: string;

@@ -18,6 +18,7 @@ const navigation: Array<{
   { href: "/admin", label: "Overview", icon: "home" },
   { href: "/admin/users", label: "Users", icon: "users" },
   { href: "/admin/tracks", label: "Tracks", icon: "music" },
+  { href: "/admin/music-blog", label: "Music Blog", icon: "spotify" },
   { href: "/admin/credits", label: "Credits", icon: "wallet" },
   { href: "/admin/listening", label: "Listening", icon: "headphones" },
   { href: "/admin/messages", label: "Messages", icon: "message" },

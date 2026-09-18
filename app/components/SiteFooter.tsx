@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const footerLinks = [
+  { href: "/music-blog", label: "Music Blog" },
   { href: "/terms-of-use", label: "Terms of Use" },
   { href: "/privacy-policy", label: "Privacy Policy" },
   { href: "/legal-notice", label: "Legal Notice" },
@@ -18,7 +19,10 @@ export function SiteFooter() {
     return null;
   }
 
-  const hasAppNavigation = pathname !== "/" && !pathname.startsWith("/auth/");
+  const hasAppNavigation =
+    pathname !== "/" &&
+    pathname !== "/music-blog" &&
+    !pathname.startsWith("/auth/");
 
   return (
     <footer

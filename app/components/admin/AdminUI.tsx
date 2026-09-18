@@ -91,6 +91,7 @@ const positiveStatuses = new Set([
   "active",
   "completed",
   "issued",
+  "published",
   "rewarded",
   "read",
 ]);
@@ -101,7 +102,12 @@ const dangerStatuses = new Set([
   "rejected",
   "suspended",
 ]);
-const pendingStatuses = new Set(["new", "pending", "unconfirmed"]);
+const pendingStatuses = new Set([
+  "new",
+  "pending",
+  "unconfirmed",
+  "unpublished",
+]);
 
 export function AdminStatusBadge({ status }: { status: string }) {
   const normalized = status.toLowerCase();
