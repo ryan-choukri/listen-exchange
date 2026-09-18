@@ -30,11 +30,13 @@ export async function signUp(
     return { error: error.message };
   }
 
+  if (data.session) {
+    redirect("/dashboard");
+  }
+
   return {
     success: true,
-    message: data.user?.user_metadata?.email_verified
-      ? "Account created! You can now login."
-      : "Check your email to confirm your account.",
+    message: "Check your email to confirm your account.",
   };
 }
 
