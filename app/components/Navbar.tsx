@@ -180,12 +180,11 @@ export function Navbar() {
           <BrandMark />
         </Link>
         <div className="flex items-center gap-2">
-          <ThemeToggle compact />
           {isLoading ? (
             <span className="h-8 w-20 animate-pulse rounded-full bg-surface-muted" />
           ) : user ? (
             <div className="flex items-center gap-2">
-              <CreditPill credits={credits} />
+              <CreditPill credits={credits} label="cr." />
               <span className="grid size-9 place-items-center rounded-full border border-strong bg-blue-soft text-sm font-black text-on-accent">
                 {user.email[0]?.toUpperCase() || "U"}
               </span>
