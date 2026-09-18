@@ -51,6 +51,10 @@ export function SpotifyPlayer({
           Premium is required to validate your listens and make sure your own
           tracks receive valid listens when you spend credits.
         </p>
+        <p className="mt-2 border-t border-white/10 pt-2 text-[11px] leading-relaxed text-white/75 sm:hidden">
+          Make sure you&apos;re logged into Spotify in your browser, not only in
+          the Spotify app.
+        </p>
       </div>
       <div className="mt-2">
         <ListeningProgress
