@@ -31,7 +31,7 @@ export async function signUp(
   }
 
   if (data.session) {
-    redirect("/dashboard");
+    redirect("/submit");
   }
 
   return {
