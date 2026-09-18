@@ -80,10 +80,31 @@ export interface AdminSettings {
   updated_at: string;
 }
 
+export interface AdminCredits {
+  summary: {
+    available_credits: number;
+    allocated_credits: number;
+    total_credits: number;
+    funded_tracks: number;
+  };
+  top_tracks: Array<{
+    track_id: string;
+    title: string;
+    artist_name: string | null;
+    credits_allocated: number;
+  }>;
+  top_users: Array<{
+    user_id: string;
+    email: string | null;
+    credits_available: number;
+  }>;
+}
+
 type AdminRpcName =
   | "get_admin_overview"
   | "get_admin_users"
   | "get_admin_tracks"
+  | "get_admin_credits"
   | "get_admin_listening"
   | "get_admin_messages"
   | "get_admin_settings";
@@ -109,6 +130,10 @@ export const getAdminUsers = cache(() =>
 
 export const getAdminTracks = cache(() =>
   adminRpc<AdminTrackRow[]>("get_admin_tracks"),
+);
+
+export const getAdminCredits = cache(() =>
+  adminRpc<AdminCredits>("get_admin_credits"),
 );
 
 export const getAdminListening = cache(() =>

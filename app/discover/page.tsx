@@ -155,10 +155,7 @@ export default function DiscoverPage() {
   const currentTrack = tracks[currentTrackIndex];
 
   const handleNext = () => {
-    if (
-      nextCooldownSeconds > 0 ||
-      currentTrackIndex >= tracks.length - 1
-    ) {
+    if (nextCooldownSeconds > 0 || currentTrackIndex >= tracks.length - 1) {
       return;
     }
 
@@ -321,7 +318,7 @@ export default function DiscoverPage() {
                         className="rounded-control border border-border border-l-4 border-l-lime-strong bg-background p-3 text-sm"
                       >
                         <p className="font-bold text-ink">
-                          {track?.title || item.track_id}
+                          {track?.title || "One track of the community"}
                         </p>
                         {track ? (
                           <p className="text-xs text-muted">

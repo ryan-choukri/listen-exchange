@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "seed-force:demo": "node --env-file=.env.local --experimental-strip-types scripts/seed-demo-data.cleanup-force.ts",
+    "seed-force:demo:cleanup": "node --env-file=.env.local --experimental-strip-types scripts/seed-demo-data.cleanup-force.ts --cleanup",
     "seed:demo": "node --env-file=.env.local --experimental-strip-types scripts/seed-demo-data.ts",
     "seed:demo:cleanup": "node --env-file=.env.local --experimental-strip-types scripts/seed-demo-data.ts --cleanup"
   },
