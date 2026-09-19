@@ -6,7 +6,7 @@ import { PublicHeader } from "@/app/music-blog/MusicBlogHeader";
 export const metadata: Metadata = {
   title: "I Made a Plays Exchange Platform for Musicians on Spotify",
   description:
-    "Get more Spotify listens by exchanging listens with other independent artists. I built ListenExchange to make music promotion simpler.",
+    "A free Spotify listening exchange for independent musicians: listen to other artists, earn credits and get listens on your own track.",
 };
 
 const comparisonRows = [
@@ -33,10 +33,10 @@ const comparisonRows = [
 ] as const;
 
 const exchangeSteps = [
-  "Listen to Spotify tracks from other independent artists.",
-  "Earn credits.",
-  "Add those credits to your own Spotify track.",
-  "Other artists listen to your track in return.",
+  "Listen to a track from another artist.",
+  "Earn a credit for listening.",
+  "Put those credits on your own Spotify track.",
+  "Your track is then shown to other artists to listen to.",
 ] as const;
 
 export default function SpotifyListeningExchangePage() {
@@ -45,9 +45,8 @@ export default function SpotifyListeningExchangePage() {
     "@type": "Article",
     headline: "I made a plays exchange platform for Musicians on Spotify",
     description:
-      "Get more Spotify listens by exchanging listens with other independent artists. I built ListenExchange to make music promotion simpler.",
-    mainEntityOfPage:
-      "https://listen-exchange.com/spotify-listening-exchange",
+      "A free Spotify listening exchange for independent musicians: listen to other artists, earn credits and get listens on your own track.",
+    mainEntityOfPage: "https://listen-exchange.com/spotify-listening-exchange",
     publisher: {
       "@type": "Organization",
       name: "ListenExchange",
@@ -70,14 +69,14 @@ export default function SpotifyListeningExchangePage() {
             </h1>
             <div className="mt-7 max-w-3xl space-y-4 text-lg leading-8 text-muted sm:text-xl sm:leading-9">
               <p className="font-semibold text-ink">
-                ListenExchange is a free Spotify listening exchange where
-                independent artists listen to each other&apos;s tracks to get more
-                real Spotify listens.
+                ListenExchange is a free Spotify listening exchange for
+                independent musicians. You listen to other artists&apos; tracks,
+                earn credits, and use them to get listens on your own song.
               </p>
               <p>
-                You listen to music from other independent artists, and other
-                artists listen to your Spotify track in return. It is a direct
-                exchange, built around one simple action: pressing play.
+                That&apos;s basically it. Instead of sending a track somewhere
+                and hoping somebody finds it, you spend a little time
+                discovering other artists and they do the same for you.
               </p>
             </div>
           </header>
@@ -93,20 +92,20 @@ export default function SpotifyListeningExchangePage() {
                 </h2>
                 <div className="mt-5 space-y-5 text-base leading-8 text-muted sm:text-lg">
                   <p>
-                    Promoting music on Spotify as an independent artist is
-                    difficult. I kept running into the same options: playlist
-                    curators, Reddit promotion and platforms like SubmitHub.
-                    They can all be useful, but the process is often slow,
-                    uncertain or focused on being selected by someone else.
+                    I&apos;m an independent musician too, and promoting a
+                    Spotify release can get repetitive very quickly. I was
+                    posting on Reddit, looking for playlists, trying SubmitHub
+                    and sending links around. Sometimes it worked, sometimes
+                    almost nobody clicked.
                   </p>
-                  <p>I wanted something simpler:</p>
+                  <p>What I really wanted was much simpler:</p>
                   <blockquote className="rounded-card border border-coral/70 bg-coral/10 px-5 py-5 text-xl font-black leading-8 text-ink shadow-card sm:px-7 sm:text-2xl">
-                    I listen to other independent artists. Other independent
-                    artists listen to me.
+                    I listen to your track, you listen to mine.
                   </blockquote>
                   <p>
-                    I could not find a platform focused on that simple
-                    listening exchange, so I built ListenExchange.
+                    I looked for a site built around that exact idea and
+                    couldn&apos;t really find one I wanted to use. So I started
+                    building ListenExchange.
                   </p>
                 </div>
               </section>
@@ -116,7 +115,7 @@ export default function SpotifyListeningExchangePage() {
                   id="promotion-options"
                   className="text-3xl font-black tracking-[-0.03em] text-ink"
                 >
-                  The music promotion options I kept finding
+                  What I was using before
                 </h2>
 
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -125,29 +124,30 @@ export default function SpotifyListeningExchangePage() {
                       Spotify playlist curators
                     </h3>
                     <p className="mt-3 leading-7 text-muted">
-                      You need to find curators who fit your sound, submit your
-                      track, write a pitch and wait. A good match can help, but
-                      there is no guarantee that your song will be placed.
+                      I&apos;ve spent a lot of time looking for playlists that
+                      actually fit a release, then writing pitches and waiting
+                      for an answer. A placement can be useful, but most
+                      submissions obviously won&apos;t turn into one.
                     </p>
                   </section>
 
                   <section className="rounded-card border border-border bg-surface p-5 shadow-card sm:p-6">
                     <h3 className="text-xl font-black text-ink">Reddit</h3>
                     <p className="mt-3 leading-7 text-muted">
-                      You need to find communities that allow music promotion,
-                      follow their self-promo rules and compete with many other
-                      artists for attention. It can work, but getting actual
-                      listeners can take time.
+                      Reddit can be great for finding people who are genuinely
+                      into new music, but every community has different promo
+                      rules and a post can disappear pretty fast if nobody sees
+                      it at the right moment.
                     </p>
                   </section>
 
                   <section className="rounded-card border border-border bg-surface p-5 shadow-card sm:p-6">
                     <h3 className="text-xl font-black text-ink">SubmitHub</h3>
                     <p className="mt-3 leading-7 text-muted">
-                      SubmitHub is useful for pitching curators, blogs and
-                      playlists. Free submissions are limited, and premium
-                      submissions still do not guarantee promotion or playlist
-                      placement.
+                      SubmitHub makes it much easier to send a track to
+                      curators, blogs and playlists in one place. I still see it
+                      as pitching though: you submit the song and somebody
+                      decides whether they want to do something with it.
                     </p>
                   </section>
 
@@ -156,18 +156,18 @@ export default function SpotifyListeningExchangePage() {
                       ListenExchange
                     </h3>
                     <p className="mt-3 leading-7 text-muted">
-                      ListenExchange is not another curator inbox. It connects
-                      artists who are ready to listen to one another directly,
-                      using a clear credit exchange.
+                      ListenExchange skips the pitch. Listen to someone
+                      else&apos;s track, earn a credit, then spend it on your
+                      own track. Another artist gets your song in their queue.
                     </p>
                   </section>
                 </div>
 
                 <p className="mt-5 leading-7 text-muted">
-                  These platforms solve different problems. ListenExchange
-                  does not replace playlist pitching, community promotion or
-                  curator feedback. It adds a simpler way to reach real
-                  listeners.
+                  I still use other ways to promote music. This is just the one
+                  I wanted to exist when the goal is very simple: get the song
+                  in front of another person who is actually going to press
+                  play.
                 </p>
               </section>
 
@@ -195,8 +195,8 @@ export default function SpotifyListeningExchangePage() {
                 </ol>
 
                 <p className="mt-6 rounded-control border-l-4 border-lime bg-lime/10 px-5 py-4 text-lg font-black leading-7 text-ink">
-                  The more tracks you listen to, the more listens you can get
-                  on your own music.
+                  The more tracks you listen to, the more listens you can get on
+                  your own music.
                 </p>
               </section>
 
@@ -205,24 +205,34 @@ export default function SpotifyListeningExchangePage() {
                   id="comparison"
                   className="text-3xl font-black tracking-[-0.03em] text-ink"
                 >
-                  A different job, not a replacement
+                  The difference in practice
                 </h2>
                 <p className="mt-4 leading-7 text-muted">
-                  Each option can be part of the same promotion plan. The
-                  difference is what you do and what you are trying to get.
+                  I don&apos;t really see these as competing tools. They ask you
+                  to do different things, and the result you&apos;re hoping for
+                  is different too.
                 </p>
 
                 <div className="mt-6 overflow-x-auto rounded-card border border-border bg-surface shadow-card">
                   <table className="w-full min-w-[42rem] border-collapse text-left">
                     <thead className="bg-surface-muted/60">
                       <tr>
-                        <th scope="col" className="px-5 py-4 text-sm font-black text-ink">
+                        <th
+                          scope="col"
+                          className="px-5 py-4 text-sm font-black text-ink"
+                        >
                           Method
                         </th>
-                        <th scope="col" className="px-5 py-4 text-sm font-black text-ink">
+                        <th
+                          scope="col"
+                          className="px-5 py-4 text-sm font-black text-ink"
+                        >
                           What you do
                         </th>
-                        <th scope="col" className="px-5 py-4 text-sm font-black text-ink">
+                        <th
+                          scope="col"
+                          className="px-5 py-4 text-sm font-black text-ink"
+                        >
                           What you get
                         </th>
                       </tr>
@@ -237,7 +247,10 @@ export default function SpotifyListeningExchangePage() {
                               : undefined
                           }
                         >
-                          <th scope="row" className="px-5 py-4 font-black text-ink">
+                          <th
+                            scope="row"
+                            className="px-5 py-4 font-black text-ink"
+                          >
                             {row.method}
                           </th>
                           <td className="px-5 py-4 text-sm leading-6 text-muted">
@@ -268,8 +281,10 @@ export default function SpotifyListeningExchangePage() {
                   track?
                 </h2>
                 <p className="mt-5 max-w-3xl leading-7 text-muted">
-                  Start by sharing your track with artists who understand how
-                  hard it is to find a real listener. You can also browse the{" "}
+                  That was the whole reason for building this. If you have more
+                  time than promo budget, you can put that time into listening
+                  to other musicians and use it to get your own track heard. You
+                  can also browse the{" "}
                   <Link
                     href="/music-blog"
                     className="font-bold text-coral-strong underline decoration-coral/40 underline-offset-4 hover:decoration-coral"
@@ -299,14 +314,17 @@ export default function SpotifyListeningExchangePage() {
               </section>
             </div>
 
-            <aside className="lg:sticky lg:top-6" aria-label="Article shortcuts">
+            <aside
+              className="lg:sticky lg:top-6"
+              aria-label="Article shortcuts"
+            >
               <Surface className="p-5">
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-coral-strong">
                   Try the exchange
                 </p>
                 <p className="mt-3 text-sm leading-6 text-muted">
-                  Add a Spotify track, listen to other artists and use the
-                  credits you earn on your own music.
+                  Add your Spotify track, listen to a few other artists and use
+                  the credits on your own release.
                 </p>
                 <Link
                   href="/submit"
