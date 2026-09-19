@@ -40,7 +40,9 @@ export interface AdminUserRow {
 }
 
 export interface AdminTrackRow {
+  spotifyTrackId: string;
   track_id: string;
+  spotify_track_id: string;
   title: string;
   artist_name: string | null;
   cover_url: string | null;
