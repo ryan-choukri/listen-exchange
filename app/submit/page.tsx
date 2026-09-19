@@ -149,8 +149,8 @@ export default function SubmitPage() {
       <div className="space-y-8">
         <PageHeader
           eyebrow="For artists & curators"
-          title="Submit Your Track"
-          description="Share your track. And get real Spotify listens !"
+          title="Submit Your Spotify Track"
+          description="Share your Spotify track. And get real Spotify listens !"
         />
 
         {success && (

@@ -227,7 +227,7 @@ export function UserSubmittedTracksList({
       <EmptyState
         icon="upload"
         title="No tracks submitted yet"
-        description="Submit your first track to start collecting feedback from the community."
+        description="Submit your Spotify track and get real listens from other artists."
         className="min-h-56"
         action={
           <LinkButton href="/submit" size="sm" icon="upload">

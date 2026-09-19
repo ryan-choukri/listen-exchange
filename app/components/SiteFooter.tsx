@@ -5,6 +5,10 @@ import { usePathname } from "next/navigation";
 
 const footerLinks = [
   { href: "/music-blog", label: "Music Blog" },
+  {
+    href: "/spotify-listening-exchange",
+    label: "Spotify Listening Exchange",
+  },
   { href: "/terms-of-use", label: "Terms of Use" },
   { href: "/privacy-policy", label: "Privacy Policy" },
   { href: "/legal-notice", label: "Legal Notice" },
@@ -22,6 +26,7 @@ export function SiteFooter() {
   const hasAppNavigation =
     pathname !== "/" &&
     pathname !== "/music-blog" &&
+    pathname !== "/spotify-listening-exchange" &&
     !pathname.startsWith("/auth/");
 
   return (

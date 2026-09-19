@@ -6,11 +6,15 @@ import { BrandMark } from "@/app/components/ui/design-system";
 const navigation = [
   { href: "/discover", label: "Discover" },
   { href: "/submit", label: "Submit a Track" },
-  { href: "/music-blog", label: "Music Blog", active: true },
+  { href: "/music-blog", label: "Music Blog" },
   { href: "/", label: "How it works" },
 ];
 
-export function MusicBlogHeader() {
+export function PublicHeader({
+  activeHref,
+}: {
+  activeHref?: string | null;
+}) {
   return (
     <header className="border-b border-border bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-3.5 sm:px-6 lg:px-8">
@@ -31,9 +35,9 @@ export function MusicBlogHeader() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  aria-current={item.active ? "page" : undefined}
+                  aria-current={activeHref === item.href ? "page" : undefined}
                   className={`relative inline-flex min-h-10 items-center rounded-control px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral ${
-                    item.active
+                    activeHref === item.href
                       ? "text-ink after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-coral"
                       : "text-muted hover:bg-surface-muted/60 hover:text-ink"
                   }`}
@@ -60,9 +64,9 @@ export function MusicBlogHeader() {
             <li key={item.href}>
               <Link
                 href={item.href}
-                aria-current={item.active ? "page" : undefined}
+                aria-current={activeHref === item.href ? "page" : undefined}
                 className={`inline-flex min-h-9 items-center rounded-full border px-3 text-xs font-bold ${
-                  item.active
+                  activeHref === item.href
                     ? "border-coral bg-coral/15 text-ink"
                     : "border-border bg-surface text-muted"
                 }`}
@@ -75,4 +79,8 @@ export function MusicBlogHeader() {
       </nav>
     </header>
   );
+}
+
+export function MusicBlogHeader() {
+  return <PublicHeader activeHref="/music-blog" />;
 }

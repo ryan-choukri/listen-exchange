@@ -31,9 +31,9 @@ const themeInitializationScript = `
 `;
 
 export const metadata: Metadata = {
-  title: "ListenExchange - Discover Independent Music & Earn Credits",
+  title: "ListenExchange - Spotify Listening Exchange for Artists",
   description:
-    "Listen to independent music, share genuine feedback, and earn credits for your own tracks.",
+    "Exchange Spotify listens with other artists. Listen to tracks and get real listens on your own spotify music in return.",
 };
 
 export default function RootLayout({

@@ -498,8 +498,9 @@ export default function Home() {
               </span>
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-8 text-muted">
-              Listen to other artists, leave real feedback, and get your own
-              music heard in return. A simple exchange between artists.
+              Listen to Spotify tracks from other artists and get real listens
+              on your own spotify tracks in return. The more you listen, the
+              more listens you can get.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
