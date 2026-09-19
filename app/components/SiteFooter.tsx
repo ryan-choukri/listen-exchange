@@ -9,6 +9,24 @@ const footerLinks = [
     href: "/spotify-listening-exchange",
     label: "Spotify Listening Exchange",
   },
+  { href: "/free-spotify-promotion", label: "Free Spotify Promotion" },
+  {
+    href: "/how-to-get-more-spotify-streams",
+    label: "Get More Spotify Streams",
+  },
+  {
+    href: "/spotify-promotion-without-money",
+    label: "Promotion Without Money",
+  },
+  {
+    href: "/free-spotify-playlist-submission",
+    label: "Free Playlist Submission",
+  },
+  { href: "/submithub-alternatives", label: "SubmitHub Alternatives" },
+  {
+    href: "/how-to-get-people-to-listen-to-your-music",
+    label: "Get People to Listen",
+  },
   { href: "/terms-of-use", label: "Terms of Use" },
   { href: "/privacy-policy", label: "Privacy Policy" },
   { href: "/legal-notice", label: "Legal Notice" },
@@ -24,10 +42,17 @@ export function SiteFooter() {
   }
 
   const hasAppNavigation =
-    pathname !== "/" &&
-    pathname !== "/music-blog" &&
-    pathname !== "/spotify-listening-exchange" &&
-    !pathname.startsWith("/auth/");
+    ![
+      "/",
+      "/music-blog",
+      "/spotify-listening-exchange",
+      "/free-spotify-promotion",
+      "/how-to-get-more-spotify-streams",
+      "/spotify-promotion-without-money",
+      "/free-spotify-playlist-submission",
+      "/submithub-alternatives",
+      "/how-to-get-people-to-listen-to-your-music",
+    ].includes(pathname) && !pathname.startsWith("/auth/");
 
   return (
     <footer
