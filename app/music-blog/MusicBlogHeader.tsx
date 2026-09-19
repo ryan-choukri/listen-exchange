@@ -7,7 +7,7 @@ const navigation = [
   { href: "/discover", label: "Discover" },
   { href: "/submit", label: "Submit a Track" },
   { href: "/music-blog", label: "Music Blog", active: true },
-  { href: "/#how-it-works", label: "How it works" },
+  { href: "/", label: "How it works" },
 ];
 
 export function MusicBlogHeader() {
