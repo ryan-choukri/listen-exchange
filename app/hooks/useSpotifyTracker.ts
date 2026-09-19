@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   abandonListeningSession,
   getListeningConfig,
@@ -60,6 +66,44 @@ declare global {
 
 const SCRIPT_ID = "spotify-iframe-api";
 const SCRIPT_URL = "https://open.spotify.com/embed/iframe-api/v1";
+const MAX_NORMAL_POSITION_DELTA_MS = 5_000;
+const STARTUP_STABLE_UPDATE_COUNT = 2;
+const TINY_BACKWARD_CORRECTION_MS = 1_000;
+const CLEAR_RESTART_POSITION_MS = 1_500;
+const CLEAR_RESTART_MIN_PREVIOUS_POSITION_MS = 5_000;
+const PROLONGED_PLAYBACK_INTERRUPTION_MS = 9_000;
+const PREVIEW_WARNING_RESET_THRESHOLD = 2;
+
+type PlaybackResetReason =
+  | "explicit_pause"
+  | "track_change"
+  | "restart"
+  | "backward_seek"
+  | "page_hidden"
+  | "prolonged_buffering"
+  | "prolonged_no_progress"
+  | "stale_server_session"
+  | "server_invalid"
+  | "manual_reset";
+
+function isMobileDevice() {
+  const mobileUserAgent =
+    /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile/i.test(
+      navigator.userAgent,
+    );
+  const isiPadOS =
+    navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+
+  return mobileUserAgent || isiPadOS;
+}
+
+function subscribeToDeviceType() {
+  return () => {};
+}
+
+function getServerDeviceType() {
+  return false;
+}
 
 function loadSpotifyIFrameAPI(): Promise<SpotifyIFrameAPI> {
   if (window.__spotifyIframeAPI) {
@@ -104,7 +148,18 @@ export function useSpotifyTracker(
   const statusRef = useRef<ListeningSessionStatus | null>(null);
   const latestPlaybackRef = useRef<PlaybackSnapshot | null>(null);
   const lastHeartbeatPositionRef = useRef<number | null>(null);
-  const pauseReportedRef = useRef(false);
+  const continuousListenedMsRef = useRef(0);
+  const requiredMsRef = useRef<number | null>(null);
+  const playbackGenerationRef = useRef(0);
+  const pendingAbandonRef = useRef<Promise<boolean> | null>(null);
+  const playbackResetCountRef = useRef(0);
+  const playbackInitializedRef = useRef(false);
+  const stablePlaybackUpdatesRef = useRef(0);
+  const resumeBaselinePendingRef = useRef(false);
+  const backwardCandidatePositionRef = useRef<number | null>(null);
+  const lastProgressEventAtRef = useRef<number | null>(null);
+  const bufferingTimeoutRef = useRef<number | null>(null);
+  const bufferingReportedRef = useRef(false);
   const startInFlightRef = useRef(false);
   const heartbeatInFlightRef = useRef(false);
 
@@ -119,16 +174,139 @@ export function useSpotifyTracker(
   const [listeningError, setListeningError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [ready, setReady] = useState(false);
+  const mobileValidationDisabled = useSyncExternalStore(
+    subscribeToDeviceType,
+    isMobileDevice,
+    getServerDeviceType,
+  );
+  const [showPreviewHelp, setShowPreviewHelp] = useState(false);
+
+  const logPlaybackEvent = useCallback(
+    (
+      eventType: string,
+      previous: PlaybackSnapshot | null,
+      next: PlaybackSnapshot | null,
+      decision: string,
+      resetReason: PlaybackResetReason | null = null,
+    ) => {
+      if (process.env.NODE_ENV === "production") return;
+
+      console.debug("[useSpotifyTracker]", {
+        eventType,
+        previousPosition: previous?.positionMs ?? null,
+        newPosition: next?.positionMs ?? null,
+        delta:
+          previous && next ? next.positionMs - previous.positionMs : null,
+        continuousProgressMs: continuousListenedMsRef.current,
+        initialized: playbackInitializedRef.current,
+        stablePlaybackUpdates: stablePlaybackUpdatesRef.current,
+        paused: next?.isPaused ?? null,
+        buffering: next?.isBuffering ?? null,
+        decision,
+        resetReason,
+      });
+    },
+    [],
+  );
+
+  const notePlaybackReset = useCallback((hadMeaningfulProgress: boolean) => {
+    if (!hadMeaningfulProgress) return;
+
+    playbackResetCountRef.current += 1;
+    if (
+      playbackResetCountRef.current >= PREVIEW_WARNING_RESET_THRESHOLD
+    ) {
+      setShowPreviewHelp(true);
+    }
+  }, []);
+
+  const queueSessionAbandon = useCallback((currentSessionId: string) => {
+    const request = abandonListeningSession(currentSessionId).catch((error) => {
+      console.error("Unable to abandon interrupted listening session:", error);
+      return false;
+    });
+
+    pendingAbandonRef.current = request;
+    void request.finally(() => {
+      if (pendingAbandonRef.current === request) {
+        pendingAbandonRef.current = null;
+      }
+    });
+
+    return request;
+  }, []);
+
+  const interruptListening = useCallback(
+    (
+      nextBaseline: PlaybackSnapshot | null,
+      countForPreviewHelp = true,
+      resetReason: PlaybackResetReason = "manual_reset",
+    ) => {
+      const currentSessionId = sessionIdRef.current;
+      const hadMeaningfulProgress = continuousListenedMsRef.current >= 1_000;
+      const previousSnapshot = latestPlaybackRef.current;
+
+      logPlaybackEvent(
+        "playback_reset",
+        previousSnapshot,
+        nextBaseline,
+        "reset",
+        resetReason,
+      );
+
+      if (bufferingTimeoutRef.current !== null) {
+        window.clearTimeout(bufferingTimeoutRef.current);
+        bufferingTimeoutRef.current = null;
+      }
+      playbackGenerationRef.current += 1;
+      if (currentSessionId && statusRef.current === "active") {
+        queueSessionAbandon(currentSessionId);
+      }
+
+      sessionIdRef.current = null;
+      statusRef.current = null;
+      latestPlaybackRef.current = nextBaseline;
+      lastHeartbeatPositionRef.current = null;
+      continuousListenedMsRef.current = 0;
+      playbackInitializedRef.current = false;
+      stablePlaybackUpdatesRef.current = 0;
+      resumeBaselinePendingRef.current = false;
+      backwardCandidatePositionRef.current = null;
+      lastProgressEventAtRef.current = null;
+      bufferingReportedRef.current = false;
+      setSessionId(null);
+      setListeningStatus(null);
+      setListenedMs(0);
+      setIsPlaying(false);
+
+      if (countForPreviewHelp) {
+        notePlaybackReset(hadMeaningfulProgress);
+      }
+    },
+    [logPlaybackEvent, notePlaybackReset, queueSessionAbandon],
+  );
 
   const applyServerResult = useCallback((result: ListeningSessionResult) => {
     if (result.minDurationMs !== null) {
+      requiredMsRef.current = result.minDurationMs;
       setRequiredMs(result.minDurationMs);
     }
     if (result.heartbeatIntervalMs !== null) {
       setHeartbeatIntervalMs(result.heartbeatIntervalMs);
     }
 
-    setListenedMs(Math.max(0, result.listenedMs));
+    const serverListenedMs = Math.max(0, result.listenedMs);
+    if (result.status === "completed" || result.status === "rewarded") {
+      continuousListenedMsRef.current = serverListenedMs;
+      setListenedMs(serverListenedMs);
+    } else if (result.status !== "invalid" && result.status !== "abandoned") {
+      const verifiedProgress = Math.max(
+        continuousListenedMsRef.current,
+        serverListenedMs,
+      );
+      continuousListenedMsRef.current = verifiedProgress;
+      setListenedMs(verifiedProgress);
+    }
 
     if (result.status) {
       statusRef.current = result.status;
@@ -147,56 +325,116 @@ export function useSpotifyTracker(
     }
 
     if (result.status === "invalid" || result.status === "abandoned") {
+      logPlaybackEvent(
+        "server_result",
+        latestPlaybackRef.current,
+        latestPlaybackRef.current,
+        "reset",
+        "server_invalid",
+      );
+      notePlaybackReset(
+        continuousListenedMsRef.current >= 1_000 || serverListenedMs >= 1_000,
+      );
+      continuousListenedMsRef.current = 0;
+      playbackInitializedRef.current = false;
+      stablePlaybackUpdatesRef.current = 0;
+      resumeBaselinePendingRef.current = false;
+      backwardCandidatePositionRef.current = null;
+      lastHeartbeatPositionRef.current = null;
+      lastProgressEventAtRef.current = null;
+      bufferingReportedRef.current = false;
+      setListenedMs(0);
       sessionIdRef.current = null;
       setSessionId(null);
       setIsPlaying(false);
     }
-  }, []);
+  }, [logPlaybackEvent, notePlaybackReset]);
 
   const sendHeartbeat = useCallback(async (
     snapshotOverride?: PlaybackSnapshot,
-    reportInactive = false,
+    forcePlaybackState = false,
   ) => {
     const currentSessionId = sessionIdRef.current;
     const snapshot = snapshotOverride ?? latestPlaybackRef.current;
-    const inactive = Boolean(
-      snapshot &&
-        (snapshot.isPaused || snapshot.isBuffering || document.hidden),
-    );
 
     if (
+      mobileValidationDisabled ||
       !currentSessionId ||
       !snapshot ||
       heartbeatInFlightRef.current ||
       statusRef.current !== "active" ||
-      (inactive && (!reportInactive || pauseReportedRef.current))
+      ((!forcePlaybackState) &&
+        (snapshot.isPaused || snapshot.isBuffering)) ||
+      document.hidden
     ) {
       return;
     }
 
     if (
-      !inactive &&
+      !forcePlaybackState &&
       lastHeartbeatPositionRef.current !== null &&
-      snapshot.positionMs === lastHeartbeatPositionRef.current
+      snapshot.positionMs <= lastHeartbeatPositionRef.current
     ) {
-      setIsPlaying(false);
+      const lastProgressAt = lastProgressEventAtRef.current;
+      const noProgressForMs =
+        lastProgressAt === null ? 0 : performance.now() - lastProgressAt;
+      const heartbeatBaseline: PlaybackSnapshot = {
+        ...snapshot,
+        positionMs: lastHeartbeatPositionRef.current,
+      };
+
+      if (noProgressForMs >= PROLONGED_PLAYBACK_INTERRUPTION_MS) {
+        interruptListening(
+          snapshot,
+          true,
+          "prolonged_no_progress",
+        );
+      } else {
+        logPlaybackEvent(
+          "heartbeat",
+          heartbeatBaseline,
+          snapshot,
+          "ignored_no_new_position",
+        );
+      }
       return;
     }
 
+    const requestGeneration = playbackGenerationRef.current;
+    const heartbeatBaseline =
+      lastHeartbeatPositionRef.current === null
+        ? null
+        : {
+            ...snapshot,
+            positionMs: lastHeartbeatPositionRef.current,
+          };
+    logPlaybackEvent(
+      "heartbeat",
+      heartbeatBaseline,
+      snapshot,
+      forcePlaybackState ? "sending_playback_state" : "sending_progress",
+    );
     heartbeatInFlightRef.current = true;
     try {
       const result = await heartbeatListeningSession(
         currentSessionId,
         snapshot.positionMs,
-        snapshot.isPaused || document.hidden,
+        snapshot.isPaused,
         snapshot.isBuffering,
         snapshot.playingUri,
       );
+
+      if (
+        sessionIdRef.current !== currentSessionId ||
+        playbackGenerationRef.current !== requestGeneration
+      ) {
+        return;
+      }
+
       applyServerResult(result);
 
       if (result.success) {
         lastHeartbeatPositionRef.current = snapshot.positionMs;
-        pauseReportedRef.current = inactive;
       }
     } catch (error) {
       console.error("Verified listening heartbeat failed:", error);
@@ -204,11 +442,17 @@ export function useSpotifyTracker(
     } finally {
       heartbeatInFlightRef.current = false;
     }
-  }, [applyServerResult]);
+  }, [
+    applyServerResult,
+    interruptListening,
+    logPlaybackEvent,
+    mobileValidationDisabled,
+  ]);
 
   const ensureSession = useCallback(
     async (snapshot: PlaybackSnapshot) => {
       if (
+        mobileValidationDisabled ||
         sessionIdRef.current ||
         startInFlightRef.current ||
         statusRef.current === "completed" ||
@@ -218,26 +462,49 @@ export function useSpotifyTracker(
       }
 
       startInFlightRef.current = true;
+      const requestGeneration = playbackGenerationRef.current;
       try {
+        const pendingAbandon = pendingAbandonRef.current;
+        if (pendingAbandon) {
+          const abandoned = await pendingAbandon;
+          if (!abandoned) {
+            setListeningError(
+              "The interrupted listening session could not be reset.",
+            );
+            return;
+          }
+        }
+
         const result = await startListeningSession(
           submittedTrackId,
           snapshot.positionMs,
           snapshot.playingUri,
         );
+
+        if (
+          playbackGenerationRef.current !== requestGeneration ||
+          mobileValidationDisabled
+        ) {
+          if (result.sessionId && result.status === "active") {
+            queueSessionAbandon(result.sessionId);
+          }
+          return;
+        }
+
+        if (
+          result.sessionId &&
+          result.status === "active" &&
+          result.listenedMs > 0
+        ) {
+          queueSessionAbandon(result.sessionId);
+          interruptListening(snapshot, false, "stale_server_session");
+          return;
+        }
+
         applyServerResult(result);
 
         if (result.success && result.status === "active") {
           lastHeartbeatPositionRef.current = snapshot.positionMs;
-
-          const latestSnapshot = latestPlaybackRef.current;
-          if (
-            latestSnapshot &&
-            (latestSnapshot.isPaused ||
-              latestSnapshot.isBuffering ||
-              document.hidden)
-          ) {
-            void sendHeartbeat(latestSnapshot, true);
-          }
         }
       } catch (error) {
         console.error("Unable to start verified listening:", error);
@@ -246,7 +513,13 @@ export function useSpotifyTracker(
         startInFlightRef.current = false;
       }
     },
-    [applyServerResult, sendHeartbeat, submittedTrackId],
+    [
+      applyServerResult,
+      interruptListening,
+      mobileValidationDisabled,
+      queueSessionAbandon,
+      submittedTrackId,
+    ],
   );
 
   const handlePlaybackUpdate = useCallback(
@@ -273,47 +546,319 @@ export function useSpotifyTracker(
       };
 
       const previousSnapshot = latestPlaybackRef.current;
-      latestPlaybackRef.current = snapshot;
-      const hasRealProgress = Boolean(
-        previousSnapshot &&
-          previousSnapshot.playingUri === playingUri &&
-          positionMs > previousSnapshot.positionMs &&
-          !isPaused &&
-          !isBuffering &&
-          !document.hidden,
+      logPlaybackEvent(
+        "playback_update",
+        previousSnapshot,
+        snapshot,
+        "received",
       );
 
-      setIsPlaying(hasRealProgress);
+      if (mobileValidationDisabled) {
+        latestPlaybackRef.current = snapshot;
+        continuousListenedMsRef.current = 0;
+        setListenedMs(0);
+        setIsPlaying(false);
+        logPlaybackEvent(
+          "playback_update",
+          previousSnapshot,
+          snapshot,
+          "ignored_mobile",
+        );
+        return;
+      }
 
-      if (hasRealProgress) {
-        pauseReportedRef.current = false;
+      if (statusRef.current === "completed" || statusRef.current === "rewarded") {
+        setIsPlaying(false);
+        logPlaybackEvent(
+          "playback_update",
+          previousSnapshot,
+          snapshot,
+          "ignored_already_complete",
+        );
+        return;
+      }
+
+      const expectedTrackId = spotifyUrl.match(
+        /open\.spotify\.com\/track\/([A-Za-z0-9]{22})/,
+      )?.[1];
+      const expectedPlayingUri = expectedTrackId
+        ? `spotify:track:${expectedTrackId}`
+        : null;
+
+      if (!expectedPlayingUri || playingUri !== expectedPlayingUri) {
+        interruptListening(snapshot, true, "track_change");
+        return;
+      }
+
+      if (document.hidden) {
+        interruptListening(snapshot, true, "page_hidden");
+        return;
+      }
+
+      if (isBuffering) {
+        setIsPlaying(false);
+        resumeBaselinePendingRef.current = true;
+        logPlaybackEvent(
+          "playback_update",
+          previousSnapshot,
+          snapshot,
+          "buffering_preserve_progress",
+        );
+
+        if (bufferingTimeoutRef.current === null) {
+          bufferingTimeoutRef.current = window.setTimeout(() => {
+            bufferingTimeoutRef.current = null;
+            if (!resumeBaselinePendingRef.current) return;
+
+            interruptListening(
+              latestPlaybackRef.current,
+              true,
+              "prolonged_buffering",
+            );
+          }, PROLONGED_PLAYBACK_INTERRUPTION_MS);
+        }
+
+        if (
+          !bufferingReportedRef.current &&
+          !heartbeatInFlightRef.current &&
+          sessionIdRef.current &&
+          statusRef.current === "active"
+        ) {
+          bufferingReportedRef.current = true;
+          const bufferingSnapshot = previousSnapshot
+            ? {
+                ...snapshot,
+                positionMs: previousSnapshot.positionMs,
+              }
+            : snapshot;
+          void sendHeartbeat(bufferingSnapshot, true);
+        }
+        return;
+      }
+
+      if (bufferingTimeoutRef.current !== null) {
+        window.clearTimeout(bufferingTimeoutRef.current);
+        bufferingTimeoutRef.current = null;
+      }
+
+      if (isPaused) {
+        interruptListening(snapshot, true, "explicit_pause");
+        return;
+      }
+
+      if (resumeBaselinePendingRef.current) {
+        resumeBaselinePendingRef.current = false;
+        bufferingReportedRef.current = false;
+        latestPlaybackRef.current = snapshot;
+        backwardCandidatePositionRef.current = null;
+        lastProgressEventAtRef.current = performance.now();
+        setIsPlaying(false);
+        logPlaybackEvent(
+          "playback_update",
+          previousSnapshot,
+          snapshot,
+          "resumed_with_new_baseline",
+        );
+        if (sessionIdRef.current && statusRef.current === "active") {
+          void sendHeartbeat(snapshot, true);
+        }
+        return;
+      }
+
+      if (
+        !playbackInitializedRef.current &&
+        (!previousSnapshot ||
+          previousSnapshot.isPaused ||
+          previousSnapshot.isBuffering ||
+          previousSnapshot.playingUri !== playingUri)
+      ) {
+        latestPlaybackRef.current = snapshot;
+        stablePlaybackUpdatesRef.current = 0;
+        setIsPlaying(false);
+        logPlaybackEvent(
+          "playback_update",
+          previousSnapshot,
+          snapshot,
+          "startup_baseline",
+        );
+        return;
+      }
+
+      if (!previousSnapshot) {
+        latestPlaybackRef.current = snapshot;
+        playbackInitializedRef.current = false;
+        stablePlaybackUpdatesRef.current = 0;
+        setIsPlaying(false);
+        return;
+      }
+
+      const positionDeltaMs = positionMs - previousSnapshot.positionMs;
+
+      if (!playbackInitializedRef.current) {
+        latestPlaybackRef.current = snapshot;
+
+        if (
+          positionDeltaMs <= 0 ||
+          positionDeltaMs > MAX_NORMAL_POSITION_DELTA_MS
+        ) {
+          stablePlaybackUpdatesRef.current = 0;
+          setIsPlaying(false);
+          logPlaybackEvent(
+            "playback_update",
+            previousSnapshot,
+            snapshot,
+            positionDeltaMs <= 0
+              ? "startup_correction_rebased"
+              : "startup_jump_rebased",
+          );
+          return;
+        }
+
+        stablePlaybackUpdatesRef.current += 1;
+        lastProgressEventAtRef.current = performance.now();
+
+        if (
+          stablePlaybackUpdatesRef.current < STARTUP_STABLE_UPDATE_COUNT
+        ) {
+          setIsPlaying(false);
+          logPlaybackEvent(
+            "playback_update",
+            previousSnapshot,
+            snapshot,
+            "startup_stabilizing",
+          );
+          return;
+        }
+
+        playbackInitializedRef.current = true;
+        setIsPlaying(true);
+        logPlaybackEvent(
+          "playback_update",
+          previousSnapshot,
+          snapshot,
+          "startup_stable",
+        );
         void ensureSession(snapshot);
-      } else if (isPaused || isBuffering || document.hidden) {
-        void sendHeartbeat(snapshot, true);
+        return;
+      }
+
+      if (positionDeltaMs === 0) {
+        if (backwardCandidatePositionRef.current !== null) {
+          backwardCandidatePositionRef.current = null;
+        }
+        logPlaybackEvent(
+          "playback_update",
+          previousSnapshot,
+          snapshot,
+          "duplicate_ignored",
+        );
+        return;
+      }
+
+      if (positionDeltaMs < 0) {
+        if (Math.abs(positionDeltaMs) <= TINY_BACKWARD_CORRECTION_MS) {
+          if (backwardCandidatePositionRef.current !== null) {
+            backwardCandidatePositionRef.current = null;
+          }
+          logPlaybackEvent(
+            "playback_update",
+            previousSnapshot,
+            snapshot,
+            "tiny_backward_correction_ignored",
+          );
+          return;
+        }
+
+        const isRestartCandidate =
+          positionMs <= CLEAR_RESTART_POSITION_MS &&
+          previousSnapshot.positionMs >=
+            CLEAR_RESTART_MIN_PREVIOUS_POSITION_MS;
+
+        if (backwardCandidatePositionRef.current === null) {
+          backwardCandidatePositionRef.current = positionMs;
+          setIsPlaying(true);
+          logPlaybackEvent(
+            "playback_update",
+            previousSnapshot,
+            snapshot,
+            isRestartCandidate
+              ? "restart_candidate_ignored_once"
+              : "backward_candidate_ignored_once",
+          );
+          return;
+        }
+
+        interruptListening(
+          snapshot,
+          true,
+          isRestartCandidate ? "restart" : "backward_seek",
+        );
+        return;
+      }
+
+      backwardCandidatePositionRef.current = null;
+      latestPlaybackRef.current = snapshot;
+
+      if (positionDeltaMs > MAX_NORMAL_POSITION_DELTA_MS) {
+        setIsPlaying(true);
+        logPlaybackEvent(
+          "playback_update",
+          previousSnapshot,
+          snapshot,
+          "large_forward_jump_rebased_without_counting",
+        );
+        return;
+      }
+
+      lastProgressEventAtRef.current = performance.now();
+      setIsPlaying(true);
+
+      if (!sessionIdRef.current || statusRef.current !== "active") {
+        void ensureSession(snapshot);
+        return;
+      }
+
+      const currentRequiredMs = requiredMsRef.current;
+      const nextListenedMs = currentRequiredMs
+        ? Math.min(
+            continuousListenedMsRef.current + positionDeltaMs,
+            currentRequiredMs,
+          )
+        : continuousListenedMsRef.current + positionDeltaMs;
+
+      continuousListenedMsRef.current = nextListenedMs;
+      setListenedMs(nextListenedMs);
+      logPlaybackEvent(
+        "playback_update",
+        previousSnapshot,
+        snapshot,
+        "position_delta_counted",
+      );
+
+      if (currentRequiredMs && nextListenedMs >= currentRequiredMs) {
+        void sendHeartbeat(snapshot);
       }
     },
-    [ensureSession, sendHeartbeat],
+    [
+      ensureSession,
+      interruptListening,
+      logPlaybackEvent,
+      mobileValidationDisabled,
+      sendHeartbeat,
+      spotifyUrl,
+    ],
   );
 
   const resetListening = useCallback(() => {
-    const currentSessionId = sessionIdRef.current;
-    if (currentSessionId && statusRef.current === "active") {
-      void abandonListeningSession(currentSessionId);
-    }
-
-    sessionIdRef.current = null;
-    statusRef.current = null;
-    latestPlaybackRef.current = null;
-    lastHeartbeatPositionRef.current = null;
-    pauseReportedRef.current = false;
-    setSessionId(null);
-    setListeningStatus(null);
-    setListenedMs(0);
+    interruptListening(null, false, "manual_reset");
+    playbackResetCountRef.current = 0;
+    setShowPreviewHelp(false);
     setListeningError(null);
-    setIsPlaying(false);
-  }, []);
+  }, [interruptListening]);
 
   useEffect(() => {
+    if (mobileValidationDisabled) return;
+
     let cancelled = false;
 
     getListeningConfig()
@@ -321,6 +866,7 @@ export function useSpotifyTracker(
         if (cancelled) return;
 
         if (result.minDurationMs !== null) {
+          requiredMsRef.current = result.minDurationMs;
           setRequiredMs(result.minDurationMs);
         }
         if (result.heartbeatIntervalMs !== null) {
@@ -340,11 +886,12 @@ export function useSpotifyTracker(
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [mobileValidationDisabled]);
 
   useEffect(() => {
     if (
       !heartbeatIntervalMs ||
+      mobileValidationDisabled ||
       !sessionId ||
       listeningStatus !== "active" ||
       !isPlaying
@@ -361,25 +908,30 @@ export function useSpotifyTracker(
     heartbeatIntervalMs,
     isPlaying,
     listeningStatus,
+    mobileValidationDisabled,
     sendHeartbeat,
     sessionId,
   ]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!document.hidden) return;
-
-      setIsPlaying(false);
-      const snapshot = latestPlaybackRef.current;
-      if (snapshot) {
-        void sendHeartbeat(snapshot, true);
+      if (
+        !document.hidden ||
+        mobileValidationDisabled ||
+        statusRef.current === "completed" ||
+        statusRef.current === "rewarded"
+      ) {
+        return;
       }
+
+      const snapshot = latestPlaybackRef.current;
+      interruptListening(snapshot, true, "page_hidden");
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [sendHeartbeat]);
+  }, [interruptListening, mobileValidationDisabled]);
 
   useEffect(() => {
     const host = embedContainerRef.current;
@@ -398,11 +950,24 @@ export function useSpotifyTracker(
     statusRef.current = null;
     latestPlaybackRef.current = null;
     lastHeartbeatPositionRef.current = null;
-    pauseReportedRef.current = false;
+    continuousListenedMsRef.current = 0;
+    playbackInitializedRef.current = false;
+    stablePlaybackUpdatesRef.current = 0;
+    resumeBaselinePendingRef.current = false;
+    backwardCandidatePositionRef.current = null;
+    lastProgressEventAtRef.current = null;
+    bufferingReportedRef.current = false;
+    if (bufferingTimeoutRef.current !== null) {
+      window.clearTimeout(bufferingTimeoutRef.current);
+      bufferingTimeoutRef.current = null;
+    }
+    playbackGenerationRef.current += 1;
+    playbackResetCountRef.current = 0;
     setSessionId(null);
     setListeningStatus(null);
     setListenedMs(0);
     setListeningError(null);
+    setShowPreviewHelp(false);
     setReady(false);
     setIsPlaying(false);
 
@@ -426,7 +991,40 @@ export function useSpotifyTracker(
 
             localController = controller;
             controller.addListener("ready", () => {
-              if (!cancelled) setReady(true);
+              if (!cancelled) {
+                logPlaybackEvent(
+                  "ready",
+                  latestPlaybackRef.current,
+                  latestPlaybackRef.current,
+                  "player_ready",
+                );
+                setReady(true);
+              }
+            });
+            controller.addListener("playback_started", (event) => {
+              if (cancelled) return;
+
+              const data = event.data;
+              const eventPosition = Math.trunc(Number(data?.position));
+              const eventPlayingUri = data?.playingURI;
+              const eventSnapshot =
+                Number.isFinite(eventPosition) &&
+                eventPosition >= 0 &&
+                typeof eventPlayingUri === "string"
+                  ? {
+                      positionMs: eventPosition,
+                      isPaused: data?.isPaused !== false,
+                      isBuffering: data?.isBuffering === true,
+                      playingUri: eventPlayingUri,
+                    }
+                  : null;
+
+              logPlaybackEvent(
+                "playback_started",
+                latestPlaybackRef.current,
+                eventSnapshot,
+                "observed",
+              );
             });
             controller.addListener("playback_update", (event) => {
               if (!cancelled) handlePlaybackUpdate(event);
@@ -445,12 +1043,27 @@ export function useSpotifyTracker(
 
     return () => {
       cancelled = true;
+      const currentSessionId = sessionIdRef.current;
+      if (currentSessionId && statusRef.current === "active") {
+        queueSessionAbandon(currentSessionId);
+      }
+      if (bufferingTimeoutRef.current !== null) {
+        window.clearTimeout(bufferingTimeoutRef.current);
+        bufferingTimeoutRef.current = null;
+      }
+      playbackGenerationRef.current += 1;
       localController?.destroy();
       if (host.isConnected) {
         host.replaceChildren();
       }
     };
-  }, [handlePlaybackUpdate, spotifyUrl]);
+  }, [
+    handlePlaybackUpdate,
+    logPlaybackEvent,
+    mobileValidationDisabled,
+    queueSessionAbandon,
+    spotifyUrl,
+  ]);
 
   const isListeningComplete =
     listeningStatus === "completed" || listeningStatus === "rewarded";
@@ -469,6 +1082,8 @@ export function useSpotifyTracker(
     listeningError,
     listeningStatus,
     sessionId,
+    mobileValidationDisabled,
+    showPreviewHelp,
     resetListening,
   };
 }

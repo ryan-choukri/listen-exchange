@@ -44,6 +44,8 @@ export function TrackCard({
     isListeningComplete,
     listeningError,
     sessionId,
+    mobileValidationDisabled,
+    showPreviewHelp,
     resetListening,
   } = useSpotifyTracker(spotifyUrl, track.id);
 
@@ -139,6 +141,8 @@ export function TrackCard({
             progressPercent={progressPercent}
             isListeningComplete={isListeningComplete}
             listeningError={listeningError}
+            mobileValidationDisabled={mobileValidationDisabled}
+            showPreviewHelp={showPreviewHelp}
           />
         </div>
         <div className="mt-5 border-t border-border pt-5">

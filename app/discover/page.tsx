@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/app/components/Button";
 import { TrackCard } from "@/app/components/TrackCard";
 import { AppShell } from "@/app/components/AppShell";
@@ -21,6 +22,39 @@ import {
 import { announceCreditsUpdated } from "@/app/lib/credits-events";
 
 const PREFETCH_THRESHOLD = 5;
+
+function DiscoverNextButton({
+  cooldownSeconds,
+  atEnd,
+  loading,
+  onNext,
+}: {
+  cooldownSeconds: number;
+  atEnd: boolean;
+  loading: boolean;
+  onNext: (bypassCooldown: boolean) => void;
+}) {
+  const searchParams = useSearchParams();
+  const bypassCooldown =
+    searchParams.has("you") ||
+    Array.from(searchParams.values()).some(
+      (value) => value.toLowerCase() === "you",
+    );
+
+  return (
+    <Button
+      onClick={() => onNext(bypassCooldown)}
+      disabled={(!bypassCooldown && cooldownSeconds > 0) || atEnd}
+      loading={!bypassCooldown && cooldownSeconds === 0 && loading && atEnd}
+      variant="secondary"
+      icon="arrow-right"
+    >
+      {!bypassCooldown && cooldownSeconds > 0
+        ? `Next (${cooldownSeconds}s)`
+        : "Next"}
+    </Button>
+  );
+}
 
 function toTrack(track: DiscoverTrack): Track {
   return {
@@ -154,8 +188,20 @@ export default function DiscoverPage() {
 
   const currentTrack = tracks[currentTrackIndex];
 
-  const handleNext = () => {
-    if (nextCooldownSeconds > 0 || currentTrackIndex >= tracks.length - 1) {
+  const handleNext = (bypassCooldown = false) => {
+    if (
+      (!bypassCooldown && nextCooldownSeconds > 0) ||
+      currentTrackIndex >= tracks.length - 1
+    ) {
+      return;
+    }
+
+    if (bypassCooldown) {
+      consecutiveNextClicksRef.current = 0;
+      setNextCooldownSeconds(0);
+      setCurrentTrackIndex((index) =>
+        Math.min(tracks.length - 1, index + 1),
+      );
       return;
     }
 
@@ -282,24 +328,29 @@ export default function DiscoverPage() {
               >
                 Previous
               </Button>
-              <Button
-                onClick={handleNext}
-                disabled={
-                  nextCooldownSeconds > 0 ||
-                  currentTrackIndex === tracks.length - 1
+              <Suspense
+                fallback={
+                  <Button
+                    disabled={
+                      nextCooldownSeconds > 0 ||
+                      currentTrackIndex === tracks.length - 1
+                    }
+                    variant="secondary"
+                    icon="arrow-right"
+                  >
+                    {nextCooldownSeconds > 0
+                      ? `Next (${nextCooldownSeconds}s)`
+                      : "Next"}
+                  </Button>
                 }
-                loading={
-                  nextCooldownSeconds === 0 &&
-                  isLoadingMore &&
-                  currentTrackIndex === tracks.length - 1
-                }
-                variant="secondary"
-                icon="arrow-right"
               >
-                {nextCooldownSeconds > 0
-                  ? `Next (${nextCooldownSeconds}s)`
-                  : "Next"}
-              </Button>
+                <DiscoverNextButton
+                  cooldownSeconds={nextCooldownSeconds}
+                  atEnd={currentTrackIndex === tracks.length - 1}
+                  loading={isLoadingMore}
+                  onNext={handleNext}
+                />
+              </Suspense>
             </div>
 
             {feedbacks.length > 0 && (
