@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import {
+  deleteAdminFeedback,
+  updateAdminFeedback,
+} from "@/app/actions/admin-feedback";
 import { AdminTable } from "@/app/components/admin/AdminUI";
 import { Button } from "@/app/components/ui/design-system";
 import type { AdminFeedbackRow } from "@/app/lib/admin/data";
@@ -30,10 +34,22 @@ export function AdminFeedbackTable({
 }: {
   feedback: AdminFeedbackRow[];
 }) {
+  const [rows, setRows] = useState(feedback);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<
+    "save" | "delete" | null
+  >(null);
+  const [rowError, setRowError] = useState<{
+    id: string;
+    message: string;
+  } | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const toggleEditor = (item: AdminFeedbackRow) => {
+    if (isPending) return;
+
     if (editingId === item.feedback_id) {
       setEditingId(null);
       setDraft("");
@@ -42,17 +58,94 @@ export function AdminFeedbackTable({
 
     setEditingId(item.feedback_id);
     setDraft(item.feedback);
+    setRowError(null);
+  };
+
+  const saveFeedback = (item: AdminFeedbackRow) => {
+    if (isPending) return;
+
+    const nextFeedback = draft.trim();
+
+    if (nextFeedback.length < 10 || nextFeedback.length > 500) {
+      setRowError({
+        id: item.feedback_id,
+        message: "Feedback must contain between 10 and 500 characters.",
+      });
+      return;
+    }
+
+    setPendingId(item.feedback_id);
+    setPendingAction("save");
+    setRowError(null);
+
+    startTransition(async () => {
+      const result = await updateAdminFeedback(
+        item.feedback_id,
+        nextFeedback,
+      );
+
+      if (result.success && result.feedback) {
+        setRows((currentRows) =>
+          currentRows.map((row) =>
+            row.feedback_id === item.feedback_id
+              ? { ...row, feedback: result.feedback! }
+              : row,
+          ),
+        );
+        setEditingId(null);
+        setDraft("");
+      } else {
+        setRowError({ id: item.feedback_id, message: result.message });
+      }
+
+      setPendingId(null);
+      setPendingAction(null);
+    });
+  };
+
+  const removeFeedback = (item: AdminFeedbackRow) => {
+    if (isPending) return;
+
+    const confirmed = window.confirm(
+      "Delete this feedback and reverse its credit rewards? This cannot be undone.",
+    );
+
+    if (!confirmed) return;
+
+    setPendingId(item.feedback_id);
+    setPendingAction("delete");
+    setRowError(null);
+
+    startTransition(async () => {
+      const result = await deleteAdminFeedback(item.feedback_id);
+
+      if (result.success) {
+        setRows((currentRows) =>
+          currentRows.filter((row) => row.feedback_id !== item.feedback_id),
+        );
+        if (editingId === item.feedback_id) {
+          setEditingId(null);
+          setDraft("");
+        }
+      } else {
+        setRowError({ id: item.feedback_id, message: result.message });
+      }
+
+      setPendingId(null);
+      setPendingAction(null);
+    });
   };
 
   return (
     <AdminTable
       headers={["User", "Track", "Feedback", "Date", "Actions"]}
-      empty={!feedback.length}
+      empty={!rows.length}
       minWidth="min-w-[860px]"
       compact
     >
-      {feedback.map((item) => {
+      {rows.map((item) => {
         const isEditing = editingId === item.feedback_id;
+        const isRowPending = isPending && pendingId === item.feedback_id;
         const [date, time] = formatCompactDate(item.created_at).split(" ");
 
         return (
@@ -82,6 +175,8 @@ export function AdminFeedbackTable({
                   aria-label={`Edit feedback from ${item.user_email ?? item.user_id}`}
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
+                  maxLength={500}
+                  disabled={isRowPending}
                   rows={4}
                   autoFocus
                   className="w-full resize-y rounded-control border border-border bg-background px-3 py-2 text-sm leading-5 text-ink outline-none transition focus:border-blue-strong focus:ring-2 focus:ring-blue-soft/20"
@@ -98,24 +193,55 @@ export function AdminFeedbackTable({
             </td>
             <td className="px-3 py-4 align-top">
               <div className="flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleEditor(item)}
-                >
-                  {isEditing ? "Close" : "Edit"}
-                </Button>
+                {isEditing ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleEditor(item)}
+                      disabled={isPending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => saveFeedback(item)}
+                      disabled={isPending || draft.trim() === item.feedback}
+                      loading={isRowPending && pendingAction === "save"}
+                    >
+                      Save
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleEditor(item)}
+                    disabled={isPending}
+                  >
+                    Edit
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="danger-outline"
                   size="sm"
                   icon="trash"
-                  title="Delete action is not connected yet"
+                  onClick={() => removeFeedback(item)}
+                  disabled={isPending}
+                  loading={isRowPending && pendingAction === "delete"}
                 >
                   Delete
                 </Button>
               </div>
+              {rowError?.id === item.feedback_id && (
+                <p className="mt-2 max-w-48 text-right text-xs font-semibold text-danger">
+                  {rowError.message}
+                </p>
+              )}
             </td>
           </tr>
         );
