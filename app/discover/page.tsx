@@ -23,6 +23,54 @@ import { announceCreditsUpdated } from "@/app/lib/credits-events";
 
 const PREFETCH_THRESHOLD = 5;
 
+function FeedbackRewardCard({ feedbackCount }: { feedbackCount: number }) {
+  const nextRewardAt = (Math.floor(feedbackCount / 10) + 1) * 10;
+  const currentMilestoneStart = nextRewardAt - 10;
+  const currentMilestoneProgress = feedbackCount - currentMilestoneStart;
+  const feedbacksRemaining = nextRewardAt - feedbackCount;
+  const progress = (currentMilestoneProgress / 10) * 100;
+
+  return (
+    <Surface className="relative w-full overflow-hidden border-coral/45 px-3.5 py-3 shadow-card sm:w-64 sm:px-4 lg:w-[17rem]">
+      <div className="pointer-events-none absolute inset-0 bg-coral/10" />
+      <div className="relative grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-3 sm:grid-cols-[2.75rem_minmax(0,1fr)]">
+        <span
+          aria-hidden="true"
+          className="grid size-10 place-items-center rounded-full border border-coral-strong bg-coral text-lg text-on-accent shadow-raised sm:size-11 sm:text-xl"
+        >
+          ★
+        </span>
+
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-coral-strong">
+            Next reward
+          </p>
+          <p className="mt-0.5 text-2xl font-black tracking-tight text-ink">
+            {feedbackCount} / {nextRewardAt}
+          </p>
+          <div
+            aria-label={`${currentMilestoneProgress} of 10 feedbacks in the current reward milestone`}
+            aria-valuemax={10}
+            aria-valuemin={0}
+            aria-valuenow={currentMilestoneProgress}
+            className="mt-2 h-2 overflow-hidden rounded-full bg-background/70 ring-1 ring-border"
+            role="progressbar"
+          >
+            <div
+              className="h-full rounded-full bg-coral transition-[width] duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="mt-2 text-[11px] font-semibold leading-4 text-muted">
+            {feedbacksRemaining} more feedback
+            {feedbacksRemaining === 1 ? "" : "s"} to earn +1 credit
+          </p>
+        </div>
+      </div>
+    </Surface>
+  );
+}
+
 function DiscoverNextButton({
   cooldownSeconds,
   atEnd,
@@ -199,9 +247,7 @@ export default function DiscoverPage() {
     if (bypassCooldown) {
       consecutiveNextClicksRef.current = 0;
       setNextCooldownSeconds(0);
-      setCurrentTrackIndex((index) =>
-        Math.min(tracks.length - 1, index + 1),
-      );
+      setCurrentTrackIndex((index) => Math.min(tracks.length - 1, index + 1));
       return;
     }
 
@@ -250,6 +296,7 @@ export default function DiscoverPage() {
         return {
           success: true,
           newCredits: result.new_credits ?? undefined,
+          creditsAwarded: result.credits_awarded ?? undefined,
         };
       } else {
         return {
@@ -272,16 +319,7 @@ export default function DiscoverPage() {
           eyebrow="Community listening"
           title="Discover & Listen"
           description="Give independent artists your full attention, share thoughtful feedback, and earn credits for your own releases."
-          aside={
-            <Surface className="min-w-40 px-4 py-3 text-right shadow-none">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted">
-                Feedbacks submitted
-              </p>
-              <p className="mt-1 text-2xl font-black text-ink">
-                {feedbacks.length}
-              </p>
-            </Surface>
-          }
+          aside={<FeedbackRewardCard feedbackCount={feedbacks.length} />}
         />
 
         {tracksError && (

@@ -17,6 +17,7 @@ export function FeedbackForm({
   existingFeedback,
   error,
   success,
+  creditsAwarded,
   isSubmitting,
   canSubmit,
   minChars,
@@ -32,6 +33,7 @@ export function FeedbackForm({
   existingFeedback: string | null;
   error: string | null;
   success: boolean;
+  creditsAwarded: number;
   isSubmitting: boolean;
   canSubmit: boolean;
   minChars: number;
@@ -116,7 +118,10 @@ export function FeedbackForm({
       )}
       {success && (
         <div className="mt-3">
-          <Notice tone="reward" title="Feedback submitted · +1 credit">
+          <Notice
+            tone="reward"
+            title={`Feedback submitted · +${creditsAwarded} ${creditsAwarded === 1 ? "credit" : "credits"}`}
+          >
             Thanks for helping this artist move forward.
           </Notice>
         </div>

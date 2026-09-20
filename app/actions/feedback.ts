@@ -28,6 +28,7 @@ export async function submitTrackFeedback(
         feedback_id: null,
         message: "Complete a verified listen before submitting feedback.",
         new_credits: null,
+        credits_awarded: null,
       };
     }
 
@@ -38,6 +39,7 @@ export async function submitTrackFeedback(
         feedback_id: null,
         message: "Feedback must contain between 10 and 500 characters.",
         new_credits: null,
+        credits_awarded: null,
       };
     }
 
@@ -49,6 +51,7 @@ export async function submitTrackFeedback(
         feedback_id: null,
         message: "You must be signed in to submit feedback.",
         new_credits: null,
+        credits_awarded: null,
       };
     }
 
@@ -64,6 +67,7 @@ export async function submitTrackFeedback(
         feedback_id: null,
         message: error.message,
         new_credits: null,
+        credits_awarded: null,
         error: error.message,
       };
     }
@@ -74,6 +78,7 @@ export async function submitTrackFeedback(
         feedback_id: null,
         message: "No response from server",
         new_credits: null,
+        credits_awarded: null,
         error: "No response from server",
       };
     }
@@ -86,6 +91,7 @@ export async function submitTrackFeedback(
       feedback_id: result.feedback_id,
       message: result.message,
       new_credits: result.new_credits,
+      credits_awarded: result.credits_awarded,
     };
   } catch (err) {
     const errorMessage =
@@ -96,6 +102,7 @@ export async function submitTrackFeedback(
       feedback_id: null,
       message: "Error submitting feedback",
       new_credits: null,
+      credits_awarded: null,
       error: errorMessage,
     };
   }

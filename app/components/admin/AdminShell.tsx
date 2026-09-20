@@ -16,11 +16,13 @@ const navigation: Array<{
   icon: IconName;
 }> = [
   { href: "/admin", label: "Overview", icon: "home" },
+  { href: "/admin/activity", label: "Activity", icon: "sparkle" },
   { href: "/admin/users", label: "Users", icon: "users" },
   { href: "/admin/tracks", label: "Tracks", icon: "music" },
   { href: "/admin/music-blog", label: "Music Blog", icon: "spotify" },
   { href: "/admin/credits", label: "Credits", icon: "wallet" },
   { href: "/admin/listening", label: "Listening", icon: "headphones" },
+  { href: "/admin/feedback", label: "Feedback", icon: "message" },
   { href: "/admin/messages", label: "Messages", icon: "message" },
   { href: "/admin/settings", label: "Settings", icon: "sparkle" },
 ];

@@ -14,6 +14,7 @@ interface TrackCardProps {
   onFeedbackSubmit?: (sessionId: string, feedback: string) => Promise<{
     success: boolean;
     newCredits?: number;
+    creditsAwarded?: number;
     error?: string;
   }>;
   onListeningValidated?: () => void;
@@ -30,6 +31,7 @@ export function TrackCard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [creditsAwarded, setCreditsAwarded] = useState(1);
   const [existingFeedback, setExistingFeedback] = useState<string | null>(null);
   const validationReportedRef = useRef(false);
 
@@ -95,6 +97,7 @@ export function TrackCard({
     try {
       const result = await onFeedbackSubmit(sessionId, feedback);
       if (result.success) {
+        setCreditsAwarded(result.creditsAwarded ?? 1);
         setSuccess(true);
         setFeedback("");
         setExistingFeedback(feedback);
@@ -117,6 +120,7 @@ export function TrackCard({
     setFeedback("");
     setError(null);
     setSuccess(false);
+    setCreditsAwarded(1);
     resetListening();
   };
 
@@ -158,6 +162,7 @@ export function TrackCard({
             existingFeedback={existingFeedback}
             error={error}
             success={success}
+            creditsAwarded={creditsAwarded}
             isSubmitting={isSubmitting || externalIsSubmitting}
             canSubmit={canSubmit}
             minChars={minChars}

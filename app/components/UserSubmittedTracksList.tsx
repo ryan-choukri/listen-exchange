@@ -240,17 +240,17 @@ export function UserSubmittedTracksList({
 
   return (
     <Surface className="overflow-hidden">
-      <div className="flex items-start justify-between gap-6 border-b border-border bg-surface-muted/45 px-5 py-5 sm:px-6">
+      <div className="flex items-start justify-between gap-6 border-b border-border bg-lime/35 px-5 py-5 sm:px-6">
         <div>
-          <h2 className="text-xl font-black tracking-tight text-ink sm:text-2xl">
+          <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl">
             Your Submitted Tracks ({tracks.length})
           </h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-sm text-white/70">
             Tracks you&apos;ve shared with the Listen Exchange community
           </p>
         </div>
         <div className="hidden items-end gap-4 lg:flex">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70">
             Submit / Share / Get feedback / Grow
           </p>
           <span className="flex h-8 items-end gap-1" aria-hidden="true">

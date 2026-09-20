@@ -91,6 +91,7 @@ export interface SubmitFeedbackResponse {
   feedback_id: string | null;
   message: string;
   new_credits: number | null;
+  credits_awarded: number | null;
 }
 
 // Submitted track (user-submitted content for discovery)

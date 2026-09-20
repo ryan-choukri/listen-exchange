@@ -133,11 +133,13 @@ export function AdminTable({
   children,
   empty,
   minWidth = "min-w-[780px]",
+  compact = false,
 }: {
   headers: string[];
   children: ReactNode;
   empty?: boolean;
   minWidth?: string;
+  compact?: boolean;
 }) {
   return (
     <Surface className="overflow-hidden">
@@ -146,7 +148,11 @@ export function AdminTable({
           <thead className="border-b border-border bg-surface-muted/55 text-[11px] uppercase tracking-[0.12em] text-muted">
             <tr>
               {headers.map((header) => (
-                <th key={header} scope="col" className="px-5 py-3 font-bold">
+                <th
+                  key={header}
+                  scope="col"
+                  className={`${compact ? "px-3" : "px-5"} py-3 font-bold`}
+                >
                   {header}
                 </th>
               ))}

@@ -74,6 +74,17 @@ export interface AdminMessageRow {
   status: string;
 }
 
+export interface AdminFeedbackRow {
+  feedback_id: string;
+  user_id: string;
+  user_email: string | null;
+  track_id: string;
+  track_title: string | null;
+  artist_name: string | null;
+  feedback: string;
+  created_at: string;
+}
+
 export interface AdminSettings {
   min_listen_duration_ms: number;
   heartbeat_interval_ms: number;
@@ -108,6 +119,7 @@ type AdminRpcName =
   | "get_admin_tracks"
   | "get_admin_credits"
   | "get_admin_listening"
+  | "get_admin_feedback"
   | "get_admin_messages"
   | "get_admin_settings";
 
@@ -140,6 +152,10 @@ export const getAdminCredits = cache(() =>
 
 export const getAdminListening = cache(() =>
   adminRpc<AdminListeningRow[]>("get_admin_listening"),
+);
+
+export const getAdminFeedback = cache(() =>
+  adminRpc<AdminFeedbackRow[]>("get_admin_feedback"),
 );
 
 export const getAdminMessages = cache(() =>
