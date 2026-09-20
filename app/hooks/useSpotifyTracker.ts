@@ -72,11 +72,13 @@ const TINY_BACKWARD_CORRECTION_MS = 1_000;
 const CLEAR_RESTART_POSITION_MS = 1_500;
 const CLEAR_RESTART_MIN_PREVIOUS_POSITION_MS = 5_000;
 const PROLONGED_PLAYBACK_INTERRUPTION_MS = 9_000;
+const FORWARD_SEEK_TOLERANCE_MS = 650;
 const PREVIEW_WARNING_RESET_THRESHOLD = 2;
 
 type PlaybackResetReason =
   | "explicit_pause"
   | "track_change"
+  | "forward_seek"
   | "restart"
   | "backward_seek"
   | "page_hidden"
@@ -157,6 +159,7 @@ export function useSpotifyTracker(
   const stablePlaybackUpdatesRef = useRef(0);
   const resumeBaselinePendingRef = useRef(false);
   const backwardCandidatePositionRef = useRef<number | null>(null);
+  const lastAcceptedPlaybackAtRef = useRef<number | null>(null);
   const lastProgressEventAtRef = useRef<number | null>(null);
   const bufferingTimeoutRef = useRef<number | null>(null);
   const bufferingReportedRef = useRef(false);
@@ -188,20 +191,27 @@ export function useSpotifyTracker(
       next: PlaybackSnapshot | null,
       decision: string,
       resetReason: PlaybackResetReason | null = null,
+      timing?: {
+        realElapsedMs: number | null;
+        progressionDifferenceMs: number | null;
+      },
     ) => {
       if (process.env.NODE_ENV === "production") return;
 
+      const spotifyDeltaMs =
+        previous && next ? next.positionMs - previous.positionMs : null;
       console.debug("[useSpotifyTracker]", {
         eventType,
-        previousPosition: previous?.positionMs ?? null,
-        newPosition: next?.positionMs ?? null,
-        delta:
-          previous && next ? next.positionMs - previous.positionMs : null,
+        previousSpotifyPositionMs: previous?.positionMs ?? null,
+        newSpotifyPositionMs: next?.positionMs ?? null,
+        spotifyDeltaMs,
         continuousProgressMs: continuousListenedMsRef.current,
         initialized: playbackInitializedRef.current,
         stablePlaybackUpdates: stablePlaybackUpdatesRef.current,
         paused: next?.isPaused ?? null,
         buffering: next?.isBuffering ?? null,
+        realElapsedMs: timing?.realElapsedMs ?? null,
+        progressionDifferenceMs: timing?.progressionDifferenceMs ?? null,
         decision,
         resetReason,
       });
@@ -241,6 +251,10 @@ export function useSpotifyTracker(
       nextBaseline: PlaybackSnapshot | null,
       countForPreviewHelp = true,
       resetReason: PlaybackResetReason = "manual_reset",
+      timing?: {
+        realElapsedMs: number | null;
+        progressionDifferenceMs: number | null;
+      },
     ) => {
       const currentSessionId = sessionIdRef.current;
       const hadMeaningfulProgress = continuousListenedMsRef.current >= 1_000;
@@ -252,6 +266,7 @@ export function useSpotifyTracker(
         nextBaseline,
         "reset",
         resetReason,
+        timing,
       );
 
       if (bufferingTimeoutRef.current !== null) {
@@ -272,6 +287,7 @@ export function useSpotifyTracker(
       stablePlaybackUpdatesRef.current = 0;
       resumeBaselinePendingRef.current = false;
       backwardCandidatePositionRef.current = null;
+      lastAcceptedPlaybackAtRef.current = null;
       lastProgressEventAtRef.current = null;
       bufferingReportedRef.current = false;
       setSessionId(null);
@@ -341,6 +357,7 @@ export function useSpotifyTracker(
       resumeBaselinePendingRef.current = false;
       backwardCandidatePositionRef.current = null;
       lastHeartbeatPositionRef.current = null;
+      lastAcceptedPlaybackAtRef.current = null;
       lastProgressEventAtRef.current = null;
       bufferingReportedRef.current = false;
       setListenedMs(0);
@@ -545,12 +562,27 @@ export function useSpotifyTracker(
         playingUri,
       };
 
+      const eventObservedAt = performance.now();
       const previousSnapshot = latestPlaybackRef.current;
+      const realElapsedMs =
+        lastAcceptedPlaybackAtRef.current === null
+          ? null
+          : Math.max(
+              0,
+              eventObservedAt - lastAcceptedPlaybackAtRef.current,
+            );
+      const progressionDifferenceMs =
+        previousSnapshot && realElapsedMs !== null
+          ? positionMs - previousSnapshot.positionMs - realElapsedMs
+          : null;
+      const eventTiming = { realElapsedMs, progressionDifferenceMs };
       logPlaybackEvent(
         "playback_update",
         previousSnapshot,
         snapshot,
         "received",
+        null,
+        eventTiming,
       );
 
       if (mobileValidationDisabled) {
@@ -650,8 +682,9 @@ export function useSpotifyTracker(
         resumeBaselinePendingRef.current = false;
         bufferingReportedRef.current = false;
         latestPlaybackRef.current = snapshot;
+        lastAcceptedPlaybackAtRef.current = eventObservedAt;
         backwardCandidatePositionRef.current = null;
-        lastProgressEventAtRef.current = performance.now();
+        lastProgressEventAtRef.current = eventObservedAt;
         setIsPlaying(false);
         logPlaybackEvent(
           "playback_update",
@@ -673,6 +706,7 @@ export function useSpotifyTracker(
           previousSnapshot.playingUri !== playingUri)
       ) {
         latestPlaybackRef.current = snapshot;
+        lastAcceptedPlaybackAtRef.current = eventObservedAt;
         stablePlaybackUpdatesRef.current = 0;
         setIsPlaying(false);
         logPlaybackEvent(
@@ -686,6 +720,7 @@ export function useSpotifyTracker(
 
       if (!previousSnapshot) {
         latestPlaybackRef.current = snapshot;
+        lastAcceptedPlaybackAtRef.current = eventObservedAt;
         playbackInitializedRef.current = false;
         stablePlaybackUpdatesRef.current = 0;
         setIsPlaying(false);
@@ -696,6 +731,7 @@ export function useSpotifyTracker(
 
       if (!playbackInitializedRef.current) {
         latestPlaybackRef.current = snapshot;
+        lastAcceptedPlaybackAtRef.current = eventObservedAt;
 
         if (
           positionDeltaMs <= 0 ||
@@ -715,7 +751,7 @@ export function useSpotifyTracker(
         }
 
         stablePlaybackUpdatesRef.current += 1;
-        lastProgressEventAtRef.current = performance.now();
+        lastProgressEventAtRef.current = eventObservedAt;
 
         if (
           stablePlaybackUpdatesRef.current < STARTUP_STABLE_UPDATE_COUNT
@@ -797,20 +833,22 @@ export function useSpotifyTracker(
       }
 
       backwardCandidatePositionRef.current = null;
-      latestPlaybackRef.current = snapshot;
-
-      if (positionDeltaMs > MAX_NORMAL_POSITION_DELTA_MS) {
-        setIsPlaying(true);
-        logPlaybackEvent(
-          "playback_update",
-          previousSnapshot,
+      if (
+        realElapsedMs !== null &&
+        positionDeltaMs > realElapsedMs + FORWARD_SEEK_TOLERANCE_MS
+      ) {
+        interruptListening(
           snapshot,
-          "large_forward_jump_rebased_without_counting",
+          true,
+          "forward_seek",
+          eventTiming,
         );
         return;
       }
 
-      lastProgressEventAtRef.current = performance.now();
+      latestPlaybackRef.current = snapshot;
+      lastAcceptedPlaybackAtRef.current = eventObservedAt;
+      lastProgressEventAtRef.current = eventObservedAt;
       setIsPlaying(true);
 
       if (!sessionIdRef.current || statusRef.current !== "active") {
@@ -955,6 +993,7 @@ export function useSpotifyTracker(
     stablePlaybackUpdatesRef.current = 0;
     resumeBaselinePendingRef.current = false;
     backwardCandidatePositionRef.current = null;
+    lastAcceptedPlaybackAtRef.current = null;
     lastProgressEventAtRef.current = null;
     bufferingReportedRef.current = false;
     if (bufferingTimeoutRef.current !== null) {
