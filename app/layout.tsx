@@ -31,7 +31,7 @@ const themeInitializationScript = `
 `;
 
 export const metadata: Metadata = {
-  title: "ListenExchange - Spotify Listening Exchange for Artists",
+  title: "Listen Exchange - Spotify Listening Exchange for Artists",
   description:
     "Exchange Spotify listens with other artists. Listen to tracks and get real listens on your own spotify music in return.",
 };
