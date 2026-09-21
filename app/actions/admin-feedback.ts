@@ -10,12 +10,48 @@ export interface AdminFeedbackMutationResult {
   success: boolean;
   message: string;
   feedback?: string;
+  feedbackId?: string;
 }
 
 function revalidateFeedbackViews() {
   revalidatePath("/admin", "layout");
   revalidatePath("/discover");
   revalidatePath("/submit");
+}
+
+export async function createAdminTrackFeedback(
+  trackId: string,
+  feedback: string,
+): Promise<AdminFeedbackMutationResult> {
+  if (!UUID_PATTERN.test(trackId)) {
+    return { success: false, message: "Invalid track." };
+  }
+
+  const trimmedFeedback = feedback.trim();
+  if (trimmedFeedback.length < 10 || trimmedFeedback.length > 500) {
+    return {
+      success: false,
+      message: "Feedback must contain between 10 and 500 characters.",
+    };
+  }
+
+  const { supabase } = await requireSuperadmin();
+  const { data, error } = await supabase.rpc("create_admin_track_feedback", {
+    p_track_id: trackId,
+    p_feedback: trimmedFeedback,
+  });
+
+  if (error || typeof data !== "string") {
+    console.error("Admin feedback creation failed:", error);
+    return { success: false, message: "Unable to add this feedback." };
+  }
+
+  revalidateFeedbackViews();
+  return {
+    success: true,
+    message: "Feedback added.",
+    feedbackId: data,
+  };
 }
 
 export async function updateAdminFeedback(

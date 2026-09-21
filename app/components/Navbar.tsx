@@ -84,7 +84,7 @@ export function Navbar() {
   const liveActivity = (
     <div
       className="space-y-2 px-1"
-      aria-label={`${artistsListening} artists listening and ${tracksListenedToday} tracks listened to today`}
+      aria-label={`${artistsListening} live artists listening and ${tracksListenedToday} tracks listened to today`}
     >
       <div className="flex items-center gap-2 text-[11px] leading-none text-muted">
         <span
@@ -95,7 +95,7 @@ export function Navbar() {
           <strong className="font-mono text-xs font-black tabular-nums text-ink">
             ~{artistsListening}
           </strong>{" "}
-          artists listening
+          live artists listening
         </span>
       </div>
       <div className="flex items-center gap-2 text-[11px] leading-none text-muted">
