@@ -33,6 +33,7 @@ export interface AdminUserRow {
   user_id: string;
   email: string | null;
   signup_date: string;
+  credits: number;
   tracks: number;
   valid_listens: number;
   feedbacks: number;
