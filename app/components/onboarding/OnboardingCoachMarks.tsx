@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { getOnboardingState } from "@/app/actions/onboarding";
 import { useCurrentUser } from "@/app/components/CurrentUserProvider";
+import { Icon } from "@/app/components/ui/design-system";
 import {
   getOnboardingStorageKey,
   isOnboardingEligible,
@@ -51,10 +52,11 @@ const STEP_CONTENT: Record<
     action: "Allocate",
   },
   4: {
-    title: "You’re live",
-    description: "Discover other artists to get more listens.",
+    title: "Get listens for your track",
+    description:
+      "Listen to tracks, leave feedback, and earn credits for your own listens.",
     target: "discover-navigation",
-    action: "Got it",
+    action: "Start listening",
   },
 };
 
@@ -536,6 +538,38 @@ export function OnboardingCoachMarks() {
         <p className="mt-1.5 text-sm leading-5 text-muted">
           {content.description}
         </p>
+        {step === 4 ? (
+          <div className="mt-3 grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-1.5 rounded-control border border-border bg-surface-muted/45 px-2 py-2.5">
+            <div className="flex min-w-0 flex-col items-center gap-1">
+              <span className="grid size-8 place-items-center rounded-full bg-blue-soft/25 text-blue-strong">
+                <Icon name="headphones" className="size-4" />
+              </span>
+              <span className="text-[10px] font-bold text-muted">Listen</span>
+            </div>
+            <Icon
+              name="flow-arrow-right"
+              className="size-4 shrink-0 text-muted/70"
+            />
+            <div className="flex min-w-0 flex-col items-center gap-1">
+              <span className="grid size-8 place-items-center rounded-full bg-coral/15 text-coral-strong">
+                <Icon name="message" className="size-4" />
+              </span>
+              <span className="text-[10px] font-bold text-muted">
+                Feedback
+              </span>
+            </div>
+            <Icon
+              name="flow-arrow-right"
+              className="size-4 shrink-0 text-muted/70"
+            />
+            <div className="flex min-w-0 flex-col items-center gap-1">
+              <span className="grid h-8 min-w-10 place-items-center rounded-full bg-lime px-2 text-xs font-black text-on-accent shadow-sm">
+                +1
+              </span>
+              <span className="text-[10px] font-bold text-muted">Credit</span>
+            </div>
+          </div>
+        ) : null}
         <div className="mt-4 flex items-center justify-between gap-3">
           <button
             type="button"
