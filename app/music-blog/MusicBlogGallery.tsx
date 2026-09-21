@@ -4,11 +4,42 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { toggleMusicBlogLike } from "@/app/actions/music-blog";
 import { useCurrentUser } from "@/app/components/CurrentUserProvider";
-import { Badge, Icon, Surface } from "@/app/components/ui/design-system";
+import {
+  Badge,
+  Button,
+  Icon,
+  Surface,
+} from "@/app/components/ui/design-system";
 import { MUSIC_GENRES, type MusicGenre } from "@/app/types/spotify";
 import type { MusicBlogTrack } from "@/app/types/music-blog";
 
+function addDataToTracks(tracks: MusicBlogTrack[]): MusicBlogTrack[] {
+  // when the like is zero add listens bettewn 2 and 6 and like is arrond 40% but random
+  // if track like is zero, generate a random number of listens and likes
+  return tracks.map((track, index) => {
+    if (track.nbLikes === 0) {
+      const nbListens = Math.floor(Math.random() * 8) + 4;
+      const nbLikes = Math.floor(nbListens * 0.6) + 1;
+      return {
+        ...track,
+        displayOrder: index,
+        nbListens,
+        nbLikes,
+        canLike: true,
+      };
+    }
+
+    return {
+      ...track,
+      displayOrder: index,
+      canLike: true,
+    };
+  });
+}
+
 type SortMode = "popular" | "recent";
+
+const TRACKS_PER_PAGE = 30;
 
 export function MusicBlogGallery({
   initialTracks,
@@ -18,7 +49,7 @@ export function MusicBlogGallery({
   initialLikedTrackIds: string[];
 }) {
   const { user, isLoading } = useCurrentUser();
-  const [tracks, setTracks] = useState(initialTracks);
+  const [tracks, setTracks] = useState(addDataToTracks(initialTracks));
   const [likedTrackIds, setLikedTrackIds] = useState(
     () => new Set(initialLikedTrackIds),
   );
@@ -26,6 +57,8 @@ export function MusicBlogGallery({
   const [sortMode, setSortMode] = useState<SortMode>("popular");
   const [pendingTrackId, setPendingTrackId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(TRACKS_PER_PAGE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [, startTransition] = useTransition();
 
   const availableGenres = useMemo(
@@ -56,6 +89,17 @@ export function MusicBlogGallery({
       );
     });
   }, [selectedGenre, sortMode, tracks]);
+
+  const renderedTracks = visibleTracks.slice(0, visibleCount);
+  const hasMoreTracks = visibleCount < visibleTracks.length;
+
+  const handleLoadMore = () => {
+    setIsLoadingMore(true);
+    window.setTimeout(() => {
+      setVisibleCount((current) => current + TRACKS_PER_PAGE);
+      setIsLoadingMore(false);
+    }, 300);
+  };
 
   const handleLike = (track: MusicBlogTrack) => {
     if (!user) {
@@ -135,7 +179,10 @@ export function MusicBlogGallery({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setSelectedGenre("All")}
+              onClick={() => {
+                setSelectedGenre("All");
+                setVisibleCount(TRACKS_PER_PAGE);
+              }}
               aria-pressed={selectedGenre === "All"}
               className={`rounded-full border px-3.5 py-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral ${
                 selectedGenre === "All"
@@ -149,7 +196,10 @@ export function MusicBlogGallery({
               <button
                 key={genre}
                 type="button"
-                onClick={() => setSelectedGenre(genre)}
+                onClick={() => {
+                  setSelectedGenre(genre);
+                  setVisibleCount(TRACKS_PER_PAGE);
+                }}
                 aria-pressed={selectedGenre === genre}
                 className={`rounded-full border px-3.5 py-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral ${
                   selectedGenre === genre
@@ -167,7 +217,10 @@ export function MusicBlogGallery({
           Sort
           <select
             value={sortMode}
-            onChange={(event) => setSortMode(event.target.value as SortMode)}
+            onChange={(event) => {
+              setSortMode(event.target.value as SortMode);
+              setVisibleCount(TRACKS_PER_PAGE);
+            }}
             className="min-h-10 rounded-control border border-border bg-surface px-3 text-sm font-bold normal-case tracking-normal text-ink outline-none focus:border-coral focus:ring-2 focus:ring-coral/20"
           >
             <option value="popular">Popular</option>
@@ -191,33 +244,34 @@ export function MusicBlogGallery({
       ) : null}
 
       {visibleTracks.length ? (
-        <section
-          aria-label="Music Blog tracks"
-          className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
-        >
-          {visibleTracks.map((track) => {
-            const liked = likedTrackIds.has(track.id);
-            const pending = pendingTrackId === track.id;
+        <>
+          <section
+            aria-label="Music Blog tracks"
+            className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
+          >
+            {renderedTracks.map((track) => {
+              const liked = likedTrackIds.has(track.id);
+              const pending = pendingTrackId === track.id;
 
-            return (
-              <Surface
-                key={track.id}
-                className="group flex min-w-0 flex-col overflow-hidden p-2.5 transition duration-200 hover:-translate-y-1 hover:border-border-strong hover:shadow-highlight"
-              >
-                <div className="overflow-hidden rounded-control border border-border bg-spotify-surface">
-                  <iframe
-                    src={`https://open.spotify.com/embed/track/${track.spotifyTrackId}?utm_source=generator&theme=0`}
-                    width="100%"
-                    height="152"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                    title={`${track.title} by ${track.artistName} on Spotify`}
-                    className="block w-full border-0"
-                  />
-                </div>
+              return (
+                <Surface
+                  key={track.id}
+                  className="group flex min-w-0 flex-col overflow-hidden p-2.5 transition duration-200 hover:-translate-y-1 hover:border-border-strong hover:shadow-highlight"
+                >
+                  <div className="overflow-hidden rounded-control border border-border bg-spotify-surface">
+                    <iframe
+                      src={`https://open.spotify.com/embed/track/${track.spotifyTrackId}?utm_source=generator&theme=0`}
+                      width="100%"
+                      height="152"
+                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                      loading="lazy"
+                      title={`${track.title} by ${track.artistName} on Spotify`}
+                      className="block w-full border-0"
+                    />
+                  </div>
 
-                <div className="flex flex-1 flex-col px-1 pb-1 pt-3">
-                  {/* <div className="min-w-0">
+                  <div className="flex flex-1 flex-col px-1 pb-1 pt-3">
+                    {/* <div className="min-w-0">
                     <h2 className="truncate text-sm font-black text-ink" title={track.title}>
                       {track.title}
                     </h2>
@@ -226,7 +280,7 @@ export function MusicBlogGallery({
                     </p>
                   </div> */}
 
-                  {/* <div className="mt-3 flex flex-wrap gap-1.5">
+                    {/* <div className="mt-3 flex flex-wrap gap-1.5">
                     {track.genres.map((genre) => (
                       <Badge
                         key={genre}
@@ -238,58 +292,75 @@ export function MusicBlogGallery({
                     ))}
                   </div> */}
 
-                  <div className="mt-auto flex items-center gap-3 pt-4">
-                    <span
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-muted"
-                      title="Blog listens"
-                    >
-                      <Icon name="play" className="size-3.5 text-coral" />
-                      {track.nbListens}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleLike(track)}
-                      disabled={pending || isLoading}
-                      aria-pressed={liked}
-                      className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral disabled:cursor-wait disabled:opacity-60 ${
-                        liked
-                          ? "border-coral bg-coral text-on-accent"
-                          : "border-border bg-background text-muted hover:border-coral/60 hover:text-coral-strong"
-                      }`}
-                    >
-                      <Icon
-                        name="heart"
-                        className={`size-3.5 ${liked ? "fill-current" : ""}`}
-                      />
-                      {liked ? "Liked" : "Like"}
-                      <span className="font-mono font-bold">
-                        {track.nbLikes}
+                    <div className="mt-auto flex items-center gap-3 pt-4">
+                      <span
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-muted"
+                        title="Blog listens"
+                      >
+                        <Icon name="play" className="size-3.5 text-coral" />
+                        {track.nbListens}
                       </span>
-                    </button>
+                      {track.canLike !== false ? (
+                        <button
+                          type="button"
+                          onClick={() => handleLike(track)}
+                          disabled={pending || isLoading}
+                          aria-pressed={liked}
+                          className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral disabled:cursor-wait disabled:opacity-60 ${
+                            liked
+                              ? "border-coral bg-coral text-on-accent"
+                              : "border-border bg-background text-muted hover:border-coral/60 hover:text-coral-strong"
+                          }`}
+                        >
+                          <Icon
+                            name="heart"
+                            className={`size-3.5 ${liked ? "fill-current" : ""}`}
+                          />
+                          {liked ? "Liked" : "Like"}
+                          <span className="font-mono font-bold">
+                            {track.nbLikes}
+                          </span>
+                        </button>
+                      ) : null}
 
-                    <Badge
-                      key={track.genres[0]}
-                      tone="blue"
-                      className="px-2 py-0.5 text-[10px]"
-                    >
-                      {track.genres[0]}
-                    </Badge>
+                      <Badge
+                        key={track.genres[0]}
+                        tone="blue"
+                        className="px-2 py-0.5 text-[10px]"
+                      >
+                        {track.genres[0]}
+                      </Badge>
 
-                    <a
-                      href={`https://open.spotify.com/track/${track.spotifyTrackId}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="ml-auto grid size-8 place-items-center rounded-full text-muted transition hover:bg-surface-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral"
-                      aria-label={`Open ${track.title} on Spotify`}
-                    >
-                      <Icon name="arrow-up-right" className="size-4" />
-                    </a>
+                      <a
+                        href={`https://open.spotify.com/track/${track.spotifyTrackId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="ml-auto grid size-8 place-items-center rounded-full text-muted transition hover:bg-surface-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral"
+                        aria-label={`Open ${track.title} on Spotify`}
+                      >
+                        <Icon name="arrow-up-right" className="size-4" />
+                      </a>
+                    </div>
                   </div>
-                </div>
-              </Surface>
-            );
-          })}
-        </section>
+                </Surface>
+              );
+            })}
+          </section>
+
+          {hasMoreTracks ? (
+            <div className="mt-6 flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                shape="pill"
+                loading={isLoadingMore}
+                onClick={handleLoadMore}
+              >
+                Load more
+              </Button>
+            </div>
+          ) : null}
+        </>
       ) : (
         <Surface className="mt-5 grid min-h-56 place-items-center border-dashed p-6 text-center">
           <div>

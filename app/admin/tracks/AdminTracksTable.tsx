@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createAdminTrackFeedback } from "@/app/actions/admin-feedback";
+import { deleteSubmittedTrack } from "@/app/actions/submit";
 import { AdminStatusBadge, AdminTable } from "@/app/components/admin/AdminUI";
 import { Button, Icon } from "@/app/components/ui/design-system";
 import { formatNumber } from "@/app/lib/admin/format";
@@ -32,7 +33,9 @@ function formatCompactDate(value: string) {
 }
 
 export function AdminTracksTable({ tracks }: { tracks: AdminTrackRow[] }) {
-  const [rows, setRows] = useState(tracks);
+  const [rows, setRows] = useState(() =>
+    tracks.filter((track) => track.status !== "deleted"),
+  );
   const [showSpotifyEmbeds, setShowSpotifyEmbeds] = useState(false);
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -93,6 +96,36 @@ export function AdminTracksTable({ tracks }: { tracks: AdminTrackRow[] }) {
     });
   };
 
+  const deleteTrack = (track: AdminTrackRow) => {
+    if (
+      isPending ||
+      !window.confirm("Are you sure you want to delete this track?")
+    ) {
+      return;
+    }
+
+    setPendingTrackId(track.track_id);
+    setRowError(null);
+
+    startTransition(async () => {
+      const result = await deleteSubmittedTrack(track.track_id);
+
+      if (result.success) {
+        setRows((currentRows) =>
+          currentRows.filter((row) => row.track_id !== track.track_id),
+        );
+        if (editingTrackId === track.track_id) {
+          setEditingTrackId(null);
+          setDraft("");
+        }
+      } else {
+        setRowError({ id: track.track_id, message: result.message });
+      }
+
+      setPendingTrackId(null);
+    });
+  };
+
   return (
     <>
       <div className="mb-4 flex justify-end">
@@ -109,7 +142,7 @@ export function AdminTracksTable({ tracks }: { tracks: AdminTrackRow[] }) {
         </Button>
       </div>
 
-      <div className="[&_th:nth-child(3)]:whitespace-nowrap [&_th:nth-child(4)]:w-px [&_th:nth-child(5)]:w-px [&_th:nth-child(5)]:px-2 [&_th:nth-child(5)]:text-center [&_th:nth-child(6)]:w-px [&_th:nth-child(6)]:px-2">
+      <div className="[&_th:nth-child(3)]:whitespace-nowrap [&_th:nth-child(4)]:w-px [&_th:nth-child(5)]:w-px [&_th:nth-child(5)]:px-2 [&_th:nth-child(5)]:text-center [&_th:nth-child(6)]:w-px [&_th:nth-child(6)]:px-2 [&_th:nth-child(7)]:w-px [&_th:nth-child(7)]:px-2">
         <AdminTable
           headers={[
             "Track",
@@ -118,6 +151,7 @@ export function AdminTracksTable({ tracks }: { tracks: AdminTrackRow[] }) {
             "Status",
             "Listens",
             "Feedbacks",
+            "",
           ]}
           empty={!rows.length}
           minWidth="min-w-[900px]"
@@ -240,6 +274,18 @@ export function AdminTracksTable({ tracks }: { tracks: AdminTrackRow[] }) {
                       {rowError.message}
                     </p>
                   ) : null}
+                </td>
+                <td className="w-px px-2 py-3 align-top">
+                  <button
+                    type="button"
+                    onClick={() => deleteTrack(track)}
+                    disabled={isPending}
+                    aria-label={`Delete ${track.title}`}
+                    title="Delete track"
+                    className="grid size-8 place-items-center rounded-control text-danger transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger disabled:cursor-wait disabled:opacity-50"
+                  >
+                    <Icon name="trash" className="size-4" />
+                  </button>
                 </td>
               </tr>
             );

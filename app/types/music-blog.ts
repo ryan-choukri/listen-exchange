@@ -13,6 +13,7 @@ export interface MusicBlogTrack {
   nbLikes: number;
   publishedAt: string | null;
   createdAt: string;
+  canLike?: boolean;
 }
 
 export interface MusicBlogData {
