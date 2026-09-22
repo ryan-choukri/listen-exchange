@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Just_Me_Again_Down_Here, Indie_Flower } from "next/font/google";
 import { LinkButton } from "./components/Button";
@@ -11,6 +12,11 @@ import {
   Surface,
   type IconName,
 } from "./components/ui/design-system";
+
+export const metadata: Metadata = {
+  description:
+    "Get more Spotify streams from other independent artists. Listen to their tracks and get your own music heard in return for free.",
+};
 
 const justMeAgainDownHere = Just_Me_Again_Down_Here({
   weight: "400",
@@ -512,9 +518,11 @@ export default function Home() {
               </span>
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-8 text-muted">
-              Listen to Spotify tracks from other artists and get real listens
-              on your own spotify tracks in return. The more you listen, the
-              more listens you can get.
+              Get more Spotify streams from other independent artists. Listen
+              to their tracks and get your own music heard in return for free.
+            </p>
+            <p className="mt-3 max-w-xl text-sm font-bold text-ink">
+              A free Spotify listening exchange for independent artists.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">

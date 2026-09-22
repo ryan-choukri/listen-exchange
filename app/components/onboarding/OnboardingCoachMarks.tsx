@@ -9,7 +9,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { createPortal } from "react-dom";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getOnboardingState } from "@/app/actions/onboarding";
 import { useCurrentUser } from "@/app/components/CurrentUserProvider";
 import { Icon } from "@/app/components/ui/design-system";
@@ -26,7 +26,9 @@ const STEP_CONTENT: Record<
   OnboardingStep,
   {
     title: string;
+    supportingTitle?: string;
     description: string;
+    secondaryDescription?: string;
     target: string;
     action: string;
   }
@@ -52,11 +54,14 @@ const STEP_CONTENT: Record<
     action: "Allocate",
   },
   4: {
-    title: "Get listens for your track",
+    title: "DON’T LEAVE NOW!",
+    supportingTitle: "Get listens for your Spotify track",
     description:
-      "Listen to tracks, leave feedback, and earn credits for your own listens.",
+      "You’re one step away from earning real Spotify listens for your own music.",
+    secondaryDescription:
+      "Listen to tracks, leave feedback, and start getting listens back.",
     target: "discover-navigation",
-    action: "Start listening",
+    action: "Get my listens",
   },
 };
 
@@ -116,10 +121,17 @@ function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(Math.max(value, minimum), maximum);
 }
 
+function parseDebugStep(value: string | null): OnboardingStep | null {
+  return value === "1" || value === "2" || value === "3" || value === "4"
+    ? (Number(value) as OnboardingStep)
+    : null;
+}
+
 function calculateLayout(
   targetRect: DOMRect,
   cardRect: DOMRect,
   placement: "auto" | "below" = "auto",
+  arrowEndOffsetX = 0,
 ): CoachLayout {
   const gutter = 18;
   const arrowGap = 30;
@@ -171,8 +183,16 @@ function calculateLayout(
     x: cardLeft + cardWidth / 2,
     y: cardTop + cardHeight / 2,
   };
-  const deltaX = targetCenter.x - cardCenter.x;
-  const deltaY = targetCenter.y - cardCenter.y;
+  const arrowTarget = {
+    x: clamp(
+      targetCenter.x + arrowEndOffsetX,
+      targetRect.left + 8,
+      targetRect.right - 8,
+    ),
+    y: targetCenter.y,
+  };
+  const deltaX = arrowTarget.x - cardCenter.x;
+  const deltaY = arrowTarget.y - cardCenter.y;
   const edgeScale =
     1 /
     Math.max(
@@ -186,12 +206,12 @@ function calculateLayout(
   };
   const distance = Math.hypot(deltaX, deltaY);
   const bend = clamp(distance * 0.12, 18, 46);
-  const direction = targetCenter.x >= cardCenter.x ? 1 : -1;
+  const direction = arrowTarget.x >= cardCenter.x ? 1 : -1;
   const arrowControl = {
-    x: (arrowStart.x + targetCenter.x) / 2 -
-      ((targetCenter.y - arrowStart.y) / Math.max(distance, 1)) * bend * direction,
-    y: (arrowStart.y + targetCenter.y) / 2 +
-      ((targetCenter.x - arrowStart.x) / Math.max(distance, 1)) * bend * direction,
+    x: (arrowStart.x + arrowTarget.x) / 2 -
+      ((arrowTarget.y - arrowStart.y) / Math.max(distance, 1)) * bend * direction,
+    y: (arrowStart.y + arrowTarget.y) / 2 +
+      ((arrowTarget.x - arrowStart.x) / Math.max(distance, 1)) * bend * direction,
   };
 
   return {
@@ -199,7 +219,7 @@ function calculateLayout(
     cardTop,
     arrowStart,
     arrowControl,
-    arrowEnd: targetCenter,
+    arrowEnd: arrowTarget,
   };
 }
 
@@ -207,6 +227,9 @@ export function OnboardingCoachMarks() {
   const { user, isLoading } = useCurrentUser();
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const debugStep =
+    pathname === "/submit" ? parseDebugStep(searchParams.get("step")) : null;
   const cardRef = useRef<HTMLDivElement>(null);
   const mounted = useSyncExternalStore(
     () => () => undefined,
@@ -219,6 +242,11 @@ export function OnboardingCoachMarks() {
   const [hasOpenModal, setHasOpenModal] = useState(false);
 
   const refreshState = useCallback(async () => {
+    if (debugStep) {
+      setStep(debugStep);
+      return;
+    }
+
     if (!user || !isOnboardingEligible(user.createdAt)) {
       setStep(null);
       return;
@@ -252,9 +280,10 @@ export function OnboardingCoachMarks() {
 
     writeStoredProgress(user.id, { status: "active", highestStep });
     setStep(resolvedStep);
-  }, [user]);
+  }, [debugStep, user]);
 
   const promoteToPreviewStep = useCallback(() => {
+    if (debugStep) return;
     if (!user || step !== 1 || !isOnboardingEligible(user.createdAt)) return;
 
     const stored = readStoredProgress(user.id);
@@ -262,7 +291,7 @@ export function OnboardingCoachMarks() {
 
     writeStoredProgress(user.id, { status: "active", highestStep: 2 });
     setStep(2);
-  }, [step, user]);
+  }, [debugStep, step, user]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -311,7 +340,7 @@ export function OnboardingCoachMarks() {
 
     const selector = `[data-onboarding-target="${STEP_CONTENT[step].target}"]`;
     const findTarget = () => {
-      if (step === 1) {
+      if (!debugStep && step === 1) {
         const previewTarget = Array.from(
           document.querySelectorAll<HTMLElement>(
             '[data-onboarding-target="add-track"]',
@@ -341,7 +370,7 @@ export function OnboardingCoachMarks() {
       observer.disconnect();
       window.removeEventListener("resize", findTarget);
     };
-  }, [pathname, promoteToPreviewStep, step]);
+  }, [debugStep, pathname, promoteToPreviewStep, step]);
 
   useEffect(() => {
     if (step !== 2 || !targetElement) return;
@@ -382,7 +411,7 @@ export function OnboardingCoachMarks() {
     targetElement.style.setProperty("--onboarding-accent", accent);
 
     const completeFromNavigation = () => {
-      if (step !== 4 || !user) return;
+      if (debugStep || step !== 4 || !user) return;
       writeStoredProgress(user.id, { status: "completed", highestStep: 4 });
       setStep(null);
     };
@@ -393,7 +422,7 @@ export function OnboardingCoachMarks() {
       targetElement.style.removeProperty("--onboarding-accent");
       targetElement.removeEventListener("click", completeFromNavigation);
     };
-  }, [hasOpenModal, step, targetElement, user]);
+  }, [debugStep, hasOpenModal, step, targetElement, user]);
 
   useLayoutEffect(() => {
     if (
@@ -416,6 +445,7 @@ export function OnboardingCoachMarks() {
             targetElement.getBoundingClientRect(),
             cardRef.current.getBoundingClientRect(),
             step === 2 ? "below" : "auto",
+            step === 4 ? 28 : 0,
           ),
         );
       });
@@ -454,14 +484,21 @@ export function OnboardingCoachMarks() {
     : "";
 
   const handleSkip = () => {
+    if (debugStep) {
+      setStep(null);
+      return;
+    }
+
     writeStoredProgress(user.id, { status: "skipped", highestStep: step });
     setStep(null);
   };
 
   const handleAction = () => {
     if (step === 4) {
-      writeStoredProgress(user.id, { status: "completed", highestStep: 4 });
-      setStep(null);
+      if (!debugStep) {
+        writeStoredProgress(user.id, { status: "completed", highestStep: 4 });
+        setStep(null);
+      }
       router.push("/discover");
       return;
     }
@@ -514,7 +551,7 @@ export function OnboardingCoachMarks() {
         ref={cardRef}
         role="dialog"
         aria-label={`Onboarding step ${step} of 4: ${content.title}`}
-        className="fixed z-[80] w-[min(18.25rem,calc(100vw-2.25rem))] rounded-card border bg-surface/95 p-4 text-ink shadow-card backdrop-blur-xl transition-opacity duration-200 sm:p-5"
+        className={`fixed z-[80] w-[min(18.25rem,calc(100vw-2.25rem))] rounded-card border bg-surface/95 p-4 text-ink backdrop-blur-xl transition-opacity duration-200 sm:p-5 ${step === 4 ? "shadow-highlight" : "shadow-card"}`}
         style={{
           left: layout?.cardLeft ?? 18,
           top: layout?.cardTop ?? 18,
@@ -532,14 +569,26 @@ export function OnboardingCoachMarks() {
             aria-hidden="true"
           />
         </div>
-        <h2 className="mt-3 text-xl font-black tracking-tight">
+        <h2
+          className={`mt-3 font-black tracking-tight ${step === 4 ? "text-2xl leading-none" : "text-xl"}`}
+        >
           {content.title}
         </h2>
-        <p className="mt-1.5 text-sm leading-5 text-muted">
+        {content.supportingTitle ? (
+          <p className="mt-2 text-base font-black leading-5 text-ink">
+            {content.supportingTitle}
+          </p>
+        ) : null}
+        <p className="mt-2 text-sm leading-5 text-muted">
           {content.description}
         </p>
+        {content.secondaryDescription ? (
+          <p className="mt-1.5 text-sm font-semibold leading-5 text-muted">
+            {content.secondaryDescription}
+          </p>
+        ) : null}
         {step === 4 ? (
-          <div className="mt-3 grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-1.5 rounded-control border border-border bg-surface-muted/45 px-2 py-2.5">
+          <div className="mt-4 grid grid-cols-[.8fr_auto_.8fr_auto_1.35fr] items-center gap-1 rounded-control border border-border bg-surface-muted/45 px-2 py-3">
             <div className="flex min-w-0 flex-col items-center gap-1">
               <span className="grid size-8 place-items-center rounded-full bg-blue-soft/25 text-blue-strong">
                 <Icon name="headphones" className="size-4" />
@@ -562,11 +611,16 @@ export function OnboardingCoachMarks() {
               name="flow-arrow-right"
               className="size-4 shrink-0 text-muted/70"
             />
-            <div className="flex min-w-0 flex-col items-center gap-1">
-              <span className="grid h-8 min-w-10 place-items-center rounded-full bg-lime px-2 text-xs font-black text-on-accent shadow-sm">
-                +1
+            <div
+              className="flex min-w-0 flex-col items-center gap-1.5"
+              aria-label="+30 legit Spotify listens"
+            >
+              <span className="grid size-11 place-items-center rounded-full bg-lime text-sm font-black text-on-accent shadow-cta-glow-soft">
+                +30
               </span>
-              <span className="text-[10px] font-bold text-muted">Credit</span>
+              <span className="text-center text-[9px] font-black leading-3 text-lime-strong">
+                legit Spotify listens
+              </span>
             </div>
           </div>
         ) : null}
@@ -581,7 +635,7 @@ export function OnboardingCoachMarks() {
           <button
             type="button"
             onClick={handleAction}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-control border border-strong px-3.5 py-2 text-xs font-black text-on-accent shadow-raised transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded-control border border-strong px-3.5 py-2 text-xs font-black text-on-accent transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-strong focus-visible:ring-offset-2 focus-visible:ring-offset-background ${step === 4 ? "shadow-cta-glow-soft" : "shadow-raised"}`}
             style={{ backgroundColor: accent }}
           >
             {content.action}

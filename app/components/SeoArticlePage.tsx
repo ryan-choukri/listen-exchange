@@ -11,10 +11,15 @@ const exchangeSteps = [
 ] as const;
 
 export function SeoArticlePage({ article }: { article: SeoArticle }) {
+  const isFreeStreamsLanding = article.slug === "free-spotify-streams";
+  const heading = article.heading ?? article.title;
+  const displayedExchangeSteps = isFreeStreamsLanding
+    ? ["Submit your Spotify track.", ...exchangeSteps]
+    : exchangeSteps;
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: article.title,
+    headline: heading,
     description: article.description,
     mainEntityOfPage: `https://listen-exchange.com/${article.slug}`,
     publisher: {
@@ -35,7 +40,7 @@ export function SeoArticlePage({ article }: { article: SeoArticle }) {
               Spotify promotion for independent artists
             </p>
             <h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.98] tracking-[-0.045em] text-ink sm:text-5xl lg:text-6xl">
-              {article.title}
+              {heading}
             </h1>
             <p className="mt-7 max-w-3xl text-lg font-semibold leading-8 text-ink sm:text-xl sm:leading-9">
               {article.intro}
@@ -82,15 +87,17 @@ export function SeoArticlePage({ article }: { article: SeoArticle }) {
                 id={`${article.slug}-exchange`}
                 className="text-2xl font-black tracking-[-0.025em] text-ink sm:text-3xl"
               >
-                How ListenExchange works
+                {isFreeStreamsLanding
+                  ? "How it works"
+                  : "How ListenExchange works"}
               </h2>
               <p className="mt-4 text-base leading-8 text-muted sm:text-lg">
-                ListenExchange is an artist-to-artist listening exchange. It
-                does not promise playlist placement or guaranteed results. It
-                gives independent artists a simple way to trade listening time.
+                {isFreeStreamsLanding
+                  ? "ListenExchange is a free Spotify listening exchange for independent artists. Listen to other musicians, earn credits, and use them to get Spotify streams on your own track without paying for promotion."
+                  : "ListenExchange is an artist-to-artist listening exchange. It does not promise playlist placement or guaranteed results. It gives independent artists a simple way to trade listening time."}
               </p>
               <ol className="mt-5 grid gap-3 sm:grid-cols-2">
-                {exchangeSteps.map((step, index) => (
+                {displayedExchangeSteps.map((step, index) => (
                   <li
                     key={step}
                     className="flex gap-3 rounded-card border border-border bg-surface p-4 shadow-card"
@@ -105,8 +112,9 @@ export function SeoArticlePage({ article }: { article: SeoArticle }) {
                 ))}
               </ol>
               <p className="mt-5 rounded-control border-l-4 border-lime bg-lime/10 px-5 py-4 font-black leading-7 text-ink">
-                The more tracks you listen to, the more listens you can get on
-                your own music.
+                {isFreeStreamsLanding
+                  ? "Want to get more Spotify streams? The more tracks you listen to, the more Spotify listens you can earn for your own music."
+                  : "The more tracks you listen to, the more listens you can get on your own music."}
               </p>
             </section>
 
@@ -131,12 +139,30 @@ export function SeoArticlePage({ article }: { article: SeoArticle }) {
                 </Link>
                 , or add your own release when you are ready.
               </p>
+              {article.relatedLinks?.length ? (
+                <p className="mt-3 leading-7 text-muted">
+                  Related guides: {" "}
+                  {article.relatedLinks.map((link, index) => (
+                    <span key={link.href}>
+                      {index > 0 ? " · " : null}
+                      <Link
+                        href={link.href}
+                        className="font-bold text-coral-strong underline decoration-coral/40 underline-offset-4"
+                      >
+                        {link.label}
+                      </Link>
+                    </span>
+                  ))}
+                </p>
+              ) : null}
               <Link
                 href="/submit"
                 className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-strong bg-lime px-6 font-black text-on-accent shadow-raised transition hover:-translate-y-0.5 hover:bg-lime-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-strong"
               >
                 <Icon name="spotify" className="size-5" />
-                Submit your Spotify track
+                {isFreeStreamsLanding
+                  ? "Submit Your Spotify Track"
+                  : "Submit your Spotify track"}
                 <Icon name="arrow-right" className="size-5" />
               </Link>
               <p className="mt-7 font-marker text-2xl text-ink sm:text-3xl">

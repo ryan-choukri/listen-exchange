@@ -61,12 +61,12 @@ function FeedbackRewardCard({ feedbackCount }: { feedbackCount: number }) {
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="mt-2 text-[11px] font-semibold leading-4 text-muted">
-            {feedbacksRemaining} more feedback
-            {feedbacksRemaining === 1 ? "" : "s"} to earn +1 credit
-          </p>
         </div>
       </div>
+      <p className="mt-2 text-[11px] font-semibold leading-4 text-muted">
+        {feedbacksRemaining} more feedback
+        {feedbacksRemaining === 1 ? "" : "s"} to unlock a bonus gift 🎁
+      </p>
     </Surface>
   );
 }

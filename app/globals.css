@@ -2,10 +2,15 @@
 
 :root {
   color-scheme: dark;
-  --background: #171512;
+  /* --background: #171512; */
+  --background: #121215;
+
   --foreground: #f7f1e7;
-  --surface: #211e1a;
-  --surface-muted: #2c2823;
+  /* --surface: #211e1a;
+  --surface-muted: #2c2823; */
+  --surface: #0f121b;
+  --surface-muted: #212536;
+
   --ink: #f7f1e7;
   --muted: #b2aa9f;
   --muted-foreground: #b2aa9f;
@@ -15,7 +20,8 @@
   --lime-strong: #a9dd4c;
   --blue-soft: #8ebde8;
   --blue-strong: #86bee9;
-  --border: #403c36;
+  /* --border: #403c36; */
+  --border: #292b32;
   --border-strong: #777168;
   --success: #7ac595;
   --danger: #f08a80;
@@ -301,8 +307,7 @@ iframe[src*="spotify.com"] {
 }
 
 .listen-notification-enter {
-  animation: listen-notification-enter 360ms cubic-bezier(0.22, 1, 0.36, 1)
-    both;
+  animation: listen-notification-enter 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

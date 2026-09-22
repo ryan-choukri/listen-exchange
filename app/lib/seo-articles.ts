@@ -8,9 +8,14 @@ export interface SeoArticleSection {
 export interface SeoArticle {
   slug: string;
   title: string;
+  heading?: string;
   description: string;
   intro: string;
   sections: SeoArticleSection[];
+  relatedLinks?: Array<{
+    href: string;
+    label: string;
+  }>;
 }
 
 export const seoArticles = {
@@ -86,15 +91,25 @@ export const seoArticles = {
         ],
       },
     ],
+    relatedLinks: [
+      {
+        href: "/how-to-get-more-spotify-streams",
+        label: "see more ways to get Spotify streams",
+      },
+      {
+        href: "/free-spotify-streams",
+        label: "use a free Spotify streams exchange",
+      },
+    ],
   },
 
   moreSpotifyStreams: {
     slug: "how-to-get-more-spotify-streams",
     title: "How to Get More Spotify Streams as an Independent Artist",
     description:
-      "How independent artists can get more Spotify streams by improving discovery, giving people a reason to listen and promoting a release beyond launch day.",
+      "Want to get more Spotify streams? Discover free ways to promote your music, reach new listeners and get your Spotify tracks heard.",
     intro:
-      "Getting more Spotify streams is mostly a discovery problem. Before somebody can stream your song, they have to come across it, understand why it might be for them, click, and actually keep listening. There is no reliable shortcut for that chain. The practical approach is to create more good opportunities for the right listeners to find the track.",
+      "Want to get more Spotify streams? The hardest part isn't uploading your music to Spotify — it's getting new people to actually press play. ListenExchange is a free Spotify listening exchange where independent artists listen to each other's tracks and get listens on their own music in return.",
     sections: [
       {
         heading: "Think about the steps before the stream",
@@ -118,9 +133,9 @@ export const seoArticles = {
         ],
       },
       {
-        heading: "Then find audiences that already like this kind of music",
+        heading: "Use playlists, communities and social media",
         paragraphs: [
-          "For new listeners, relevance beats reach. A small punk community is more useful for a punk track than a giant general promotion group. The same applies to niche playlists, independent radio, blogs, local scenes, Discord servers and subreddits. Look at what people actually discuss and share before adding your own link.",
+          "For new listeners, relevance beats reach. A small punk community is more useful for a punk track than a giant general promotion group. The same applies to niche playlists, independent radio, blogs, local scenes, Discord servers, Reddit communities and social media pages. Look at what people actually discuss and share before adding your own link.",
           "This takes more time because there is no single database of perfect listeners. But it also means you learn where your music belongs. That information becomes useful again on the next release.",
         ],
       },
@@ -158,6 +173,12 @@ export const seoArticles = {
           "Streams matter, but they do not tell the whole story. Replies, saves, follows, people coming back to another track, playlist adds and real conversations can all tell you whether the promotion is reaching the right people. A campaign that creates a smaller number of interested listeners may be more useful than one that creates a spike and nothing afterwards.",
           "The main thing I would track is what caused a reaction. Was it a live clip? A playlist? A Reddit thread? A message from another band? Keep repeating the routes that connect the song with people who actually care, and make the next release easier to discover than the previous one.",
         ],
+      },
+    ],
+    relatedLinks: [
+      {
+        href: "/free-spotify-streams",
+        label: "try the free Spotify streams exchange",
       },
     ],
   },
@@ -241,6 +262,16 @@ export const seoArticles = {
         ],
       },
     ],
+    relatedLinks: [
+      {
+        href: "/how-to-get-more-spotify-streams",
+        label: "build a plan to get more Spotify streams",
+      },
+      {
+        href: "/free-spotify-streams",
+        label: "trade listening time for free Spotify streams",
+      },
+    ],
   },
 
   freePlaylistSubmission: {
@@ -313,6 +344,16 @@ export const seoArticles = {
           "ListenExchange is not a playlist submission service and it does not place music on playlists. I mention it here because people searching for free playlist submission are often really searching for a free way to get a Spotify track in front of listeners.",
           "The platform takes a different route: artists listen to other artists on Spotify, earn credits from valid listens, and use those credits to make their own tracks available for discovery. You can use that alongside editorial pitching and curator outreach. They solve different problems.",
         ],
+      },
+    ],
+    relatedLinks: [
+      {
+        href: "/how-to-get-more-spotify-streams",
+        label: "explore other ways to get more Spotify streams",
+      },
+      {
+        href: "/free-spotify-streams",
+        label: "discover the free Spotify streams exchange",
       },
     ],
   },
@@ -397,6 +438,16 @@ export const seoArticles = {
         ],
       },
     ],
+    relatedLinks: [
+      {
+        href: "/how-to-get-more-spotify-streams",
+        label: "read the guide to getting more Spotify streams",
+      },
+      {
+        href: "/free-spotify-streams",
+        label: "try an artist-to-artist streams exchange",
+      },
+    ],
   },
 
   getPeopleToListen: {
@@ -471,6 +522,37 @@ export const seoArticles = {
           "One listen is useful, but it does not automatically create a fan. Somebody may like one track and never come back. That is normal. The bigger goal is to keep creating enough good discovery moments that some people remember the name, save a song, follow the project, come to a show or listen again later.",
           "That is why I would rather build repeatable ways to meet relevant listeners than chase one giant number. Communities, collaborations, direct outreach, playlists and listening exchanges can all help, but the music still needs time to become familiar to people.",
         ],
+      },
+    ],
+    relatedLinks: [
+      {
+        href: "/how-to-get-more-spotify-streams",
+        label: "learn how independent artists get more Spotify streams",
+      },
+      {
+        href: "/free-spotify-streams",
+        label: "get free Spotify streams through mutual listening",
+      },
+    ],
+  },
+
+  freeSpotifyStreams: {
+    slug: "free-spotify-streams",
+    title: "Free Spotify Streams for Independent Artists | ListenExchange",
+    heading: "Get Free Spotify Streams by Listening to Other Artists",
+    description:
+      "Get free Spotify streams by listening to other independent artists. Submit your track, discover music and get listens on your own music in return.",
+    intro:
+      "Looking for free Spotify streams? ListenExchange lets independent artists listen to each other's Spotify tracks and get listens on their own music in return.",
+    sections: [],
+    relatedLinks: [
+      {
+        href: "/how-to-get-more-spotify-streams",
+        label: "learn how to get more Spotify streams",
+      },
+      {
+        href: "/free-spotify-promotion",
+        label: "explore more free Spotify promotion ideas",
       },
     ],
   },

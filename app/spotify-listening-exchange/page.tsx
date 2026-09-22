@@ -300,6 +300,23 @@ export default function SpotifyListeningExchangePage() {
                   </Link>
                   .
                 </p>
+                <p className="mt-4 max-w-3xl leading-7 text-muted">
+                  If you want a broader promotion plan, read how to{" "}
+                  <Link
+                    href="/how-to-get-more-spotify-streams"
+                    className="font-bold text-coral-strong underline decoration-coral/40 underline-offset-4 hover:decoration-coral"
+                  >
+                    get more Spotify streams
+                  </Link>
+                  . If your budget is zero, see how the{" "}
+                  <Link
+                    href="/free-spotify-streams"
+                    className="font-bold text-coral-strong underline decoration-coral/40 underline-offset-4 hover:decoration-coral"
+                  >
+                    free Spotify streams exchange
+                  </Link>{" "}
+                  works.
+                </p>
                 <Link
                   href="/submit"
                   className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-strong bg-lime px-6 font-black text-on-accent shadow-raised transition hover:-translate-y-0.5 hover:bg-lime-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-strong focus-visible:ring-offset-2 focus-visible:ring-offset-surface"

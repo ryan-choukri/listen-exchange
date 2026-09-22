@@ -14,6 +14,7 @@ const footerLinks = [
     href: "/how-to-get-more-spotify-streams",
     label: "Get More Spotify Streams",
   },
+  { href: "/free-spotify-streams", label: "Free Spotify Streams" },
   {
     href: "/spotify-promotion-without-money",
     label: "Promotion Without Money",
@@ -48,6 +49,7 @@ export function SiteFooter() {
       "/spotify-listening-exchange",
       "/free-spotify-promotion",
       "/how-to-get-more-spotify-streams",
+      "/free-spotify-streams",
       "/spotify-promotion-without-money",
       "/free-spotify-playlist-submission",
       "/submithub-alternatives",
