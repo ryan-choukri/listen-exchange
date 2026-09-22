@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Just_Me_Again_Down_Here, Indie_Flower } from "next/font/google";
 import { LinkButton } from "./components/Button";
 import { UserMenu } from "./components/UserMenu";
 import { ThemeToggle } from "./components/ThemeToggle";
@@ -10,6 +11,16 @@ import {
   Surface,
   type IconName,
 } from "./components/ui/design-system";
+
+const justMeAgainDownHere = Just_Me_Again_Down_Here({
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const indieFlower = Indie_Flower({
+  weight: "400",
+  subsets: ["latin"],
+});
 
 const howItWorksSteps: Array<{
   number: string;
@@ -493,7 +504,10 @@ export default function Home() {
             </p>
             <h1 className="mt-7 max-w-3xl text-5xl font-black leading-[0.95] tracking-[-0.055em] text-ink sm:text-6xl lg:text-7xl">
               No budget for music promotion.
-              <span className="mt-2 block font-marker text-[0.72em]  font-normal text-italic leading-none text-coral-strong">
+              <span
+                // make the font take more space weetwen characters by adjusting letter spacing
+                className={`mt-2 block text-[0.72em] font-bold text-italic tracking-[-0.05em] text-coral-strong ${indieFlower.className}`}
+              >
                 use your time instead !
               </span>
             </h1>

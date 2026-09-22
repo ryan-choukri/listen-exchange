@@ -24,6 +24,8 @@ export interface MusicBlogData {
 export interface MusicBlogMutationResponse {
   success: boolean;
   message: string;
+  skipped?: boolean;
+  trackId?: string;
 }
 
 export interface MusicBlogLikeResponse extends MusicBlogMutationResponse {

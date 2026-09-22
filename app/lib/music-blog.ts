@@ -136,8 +136,17 @@ export async function getPublicMusicBlogData(): Promise<MusicBlogData> {
     console.error("Error fetching music blog likes:", likesError);
   }
 
+  // filter reduce for any doublon spotify track IDs in the merged tracks list
+  const uniqueTracks: MusicBlogTrack[] = [];
+  const seenSpotifyTrackIds = new Set<string>();
+  for (const track of mergedTracks) {
+    if (!seenSpotifyTrackIds.has(track.spotifyTrackId)) {
+      seenSpotifyTrackIds.add(track.spotifyTrackId);
+      uniqueTracks.push(track);
+    }
+  }
   return {
-    tracks: mergedTracks,
+    tracks: uniqueTracks,
     likedTrackIds: (likes ?? []).map((like) => String(like.track_id)),
   };
 }

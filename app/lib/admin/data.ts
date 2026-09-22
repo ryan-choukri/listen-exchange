@@ -19,14 +19,22 @@ export interface AdminOverview {
     average_validated_duration_ms: number;
     rewards_issued_today: number;
   };
-  recent_activity: Array<{
-    event_type: string;
-    occurred_at: string;
-    actor_email: string | null;
-    title: string;
-    detail: string | null;
-    status: string;
-  }>;
+  recent_activity: AdminActivity[];
+}
+
+export interface AdminActivity {
+  event_type: string;
+  occurred_at: string;
+  actor_email: string | null;
+  title: string;
+  detail: string | null;
+  status: string;
+}
+
+export interface AdminActivityPage {
+  activities: AdminActivity[];
+  totalCount: number;
+  pageSize: number;
 }
 
 export interface AdminUserRow {
@@ -137,6 +145,34 @@ async function adminRpc<T>(name: AdminRpcName): Promise<T> {
 
 export const getAdminOverview = cache(() =>
   adminRpc<AdminOverview>("get_admin_overview"),
+);
+
+export const ADMIN_ACTIVITY_PAGE_SIZE = 100;
+
+export const getAdminActivity = cache(
+  async (page: number): Promise<AdminActivityPage> => {
+    const safePage = Math.max(1, Math.trunc(page));
+    const { supabase } = await requireSuperadmin();
+    const { data, error } = await supabase.rpc("get_admin_activity", {
+      p_offset: (safePage - 1) * ADMIN_ACTIVITY_PAGE_SIZE,
+      p_limit: ADMIN_ACTIVITY_PAGE_SIZE,
+    });
+
+    if (error) {
+      throw new Error(`Admin query get_admin_activity failed: ${error.message}`);
+    }
+
+    const payload = (data ?? {}) as {
+      activities?: AdminActivity[];
+      total_count?: number | string;
+    };
+
+    return {
+      activities: Array.isArray(payload.activities) ? payload.activities : [],
+      totalCount: Math.max(0, Number(payload.total_count ?? 0)),
+      pageSize: ADMIN_ACTIVITY_PAGE_SIZE,
+    };
+  },
 );
 
 export const getAdminUsers = cache(() =>

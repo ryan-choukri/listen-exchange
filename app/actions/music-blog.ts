@@ -126,14 +126,49 @@ export async function addMusicBlogTrack(
   if (validationError) return validationError;
 
   const { supabase } = await requireSuperadmin();
-  const { error } = await supabase.from("music_blog_tracks").insert({
-    ...trackPayload(input),
-    published_at: input.published ? new Date().toISOString() : null,
-  });
+  const [musicBlogDuplicate, submittedTrackDuplicate] = await Promise.all([
+    supabase
+      .from("music_blog_tracks")
+      .select("id")
+      .eq("spotify_track_id", input.spotifyTrackId)
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("submitted_tracks")
+      .select("id")
+      .eq("track_id", input.spotifyTrackId)
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  if (musicBlogDuplicate.error || submittedTrackDuplicate.error) {
+    return {
+      success: false,
+      message: "Unable to check whether this track already exists.",
+    };
+  }
+
+  if (musicBlogDuplicate.data || submittedTrackDuplicate.data) {
+    return {
+      success: false,
+      skipped: true,
+      message: "This Spotify track already exists on Listen Exchange.",
+    };
+  }
+
+  const { data: insertedTrack, error } = await supabase
+    .from("music_blog_tracks")
+    .insert({
+      ...trackPayload(input),
+      published_at: input.published ? new Date().toISOString() : null,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return {
       success: false,
+      skipped: error.code === "23505",
       message:
         error.code === "23505"
           ? "This Spotify track is already in the Music Blog."
@@ -142,7 +177,11 @@ export async function addMusicBlogTrack(
   }
 
   revalidateMusicBlog();
-  return { success: true, message: "Track added to the Music Blog." };
+  return {
+    success: true,
+    message: "Track added to the Music Blog.",
+    trackId: insertedTrack.id,
+  };
 }
 
 export async function updateMusicBlogTrack(

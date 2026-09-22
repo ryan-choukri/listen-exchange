@@ -38,6 +38,11 @@ function addDataToTracks(tracks: MusicBlogTrack[]): MusicBlogTrack[] {
 }
 
 type SortMode = "popular" | "recent";
+type RankingPeriod = "weekly" | "monthly";
+type RankingFilter = {
+  period: RankingPeriod;
+  cutoff: number;
+} | null;
 
 const TRACKS_PER_PAGE = 30;
 
@@ -55,6 +60,7 @@ export function MusicBlogGallery({
   );
   const [selectedGenre, setSelectedGenre] = useState<MusicGenre | "All">("All");
   const [sortMode, setSortMode] = useState<SortMode>("popular");
+  const [rankingFilter, setRankingFilter] = useState<RankingFilter>(null);
   const [pendingTrackId, setPendingTrackId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(TRACKS_PER_PAGE);
@@ -70,10 +76,23 @@ export function MusicBlogGallery({
   );
 
   const visibleTracks = useMemo(() => {
-    const filtered =
+    let filtered =
       selectedGenre === "All"
         ? tracks
         : tracks.filter((track) => track.genres.includes(selectedGenre));
+
+    if (rankingFilter) {
+      filtered = filtered.filter(
+        (track) => Date.parse(track.createdAt) >= rankingFilter.cutoff,
+      );
+
+      return [...filtered].sort(
+        (left, right) =>
+          right.nbListens - left.nbListens ||
+          right.nbLikes - left.nbLikes ||
+          left.displayOrder - right.displayOrder,
+      );
+    }
 
     return [...filtered].sort((left, right) => {
       if (sortMode === "recent") {
@@ -88,7 +107,7 @@ export function MusicBlogGallery({
         left.displayOrder - right.displayOrder
       );
     });
-  }, [selectedGenre, sortMode, tracks]);
+  }, [rankingFilter, selectedGenre, sortMode, tracks]);
 
   const renderedTracks = visibleTracks.slice(0, visibleCount);
   const hasMoreTracks = visibleCount < visibleTracks.length;
@@ -168,6 +187,48 @@ export function MusicBlogGallery({
 
   return (
     <>
+      <div className="relative z-10 flex h-0 justify-center">
+        <div className="absolute top-0 flex -translate-y-1/2 items-center gap-2 bg-background px-2">
+          {(
+            [
+              ["weekly", "Weekly Top"],
+              ["monthly", "Monthly Top"],
+            ] as const
+          ).map(([period, label]) => {
+            const active = rankingFilter?.period === period;
+
+            return (
+              <button
+                key={period}
+                type="button"
+                aria-pressed={active}
+                onClick={() => {
+                  const periodInDays = period === "weekly" ? 7 : 30;
+                  setRankingFilter(
+                    active
+                      ? null
+                      : {
+                          period,
+                          cutoff:
+                            Date.now() -
+                            periodInDays * 24 * 60 * 60 * 1_000,
+                        },
+                  );
+                  setVisibleCount(TRACKS_PER_PAGE);
+                }}
+                className={`rounded-full border px-3 py-1.5 text-[11px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime ${
+                  active
+                    ? "border-lime bg-lime text-on-accent shadow-[0_0_14px_color-mix(in_srgb,var(--lime)_32%,transparent)] hover:bg-lime-strong"
+                    : "border-lime/60 bg-background text-lime shadow-[0_0_10px_color-mix(in_srgb,var(--lime)_14%,transparent)] hover:border-lime hover:bg-lime/5"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <section
         aria-label="Filter and sort tracks"
         className="mt-9 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
@@ -219,6 +280,7 @@ export function MusicBlogGallery({
             value={sortMode}
             onChange={(event) => {
               setSortMode(event.target.value as SortMode);
+              setRankingFilter(null);
               setVisibleCount(TRACKS_PER_PAGE);
             }}
             className="min-h-10 rounded-control border border-border bg-surface px-3 text-sm font-bold normal-case tracking-normal text-ink outline-none focus:border-coral focus:ring-2 focus:ring-coral/20"

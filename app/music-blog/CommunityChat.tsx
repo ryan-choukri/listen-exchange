@@ -260,7 +260,7 @@ export function CommunityChat({ children }: { children: ReactNode }) {
       ) : null}
 
       <div
-        className={`fixed bottom-3 right-0 top-[124px] z-30 w-[min(21rem,calc(100vw-1rem))] transition-transform duration-300 md:top-[88px] ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed bottom-2 right-0 top-[124px] z-30 w-[48vw] transition-transform duration-300 md:bottom-3 md:top-[88px] md:w-[min(21rem,calc(100vw-1rem))] ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         <button
           type="button"
@@ -308,7 +308,7 @@ export function CommunityChat({ children }: { children: ReactNode }) {
 
           <div
             ref={messagesContainerRef}
-            className="min-h-0 flex-1 overflow-y-auto px-4 py-3.5"
+            className="min-h-0 flex-1 overflow-y-auto px-2 py-3.5 md:px-4"
           >
             <ol className="divide-y divide-border/60 pb-10">
               <span className="pb-2 text-[10px] text-muted text-center block ">
@@ -320,7 +320,7 @@ export function CommunityChat({ children }: { children: ReactNode }) {
                   className="flex items-start gap-2 py-2 first:pt-0 last:pb-0"
                 >
                   <span
-                    className={`grid size-8 shrink-0 place-items-center rounded-full text-xs font-black ${message.tone} ${message.pending ? "opacity-60" : ""}`}
+                    className={`grid size-6 shrink-0 place-items-center rounded-full text-[10px] font-black md:size-8 md:text-xs ${message.tone} ${message.pending ? "opacity-60" : ""}`}
                     aria-hidden="true"
                   >
                     {message.name.charAt(0).toUpperCase()}
@@ -335,7 +335,7 @@ export function CommunityChat({ children }: { children: ReactNode }) {
                           {message.time}
                         </time>
                       </p>
-                      <p className="mt-0.5 break-words text-xs leading-5 text-muted">
+                      <p className="mt-0.5 min-w-0 break-words text-xs leading-5 text-muted [overflow-wrap:anywhere]">
                         {message.text}
                       </p>
                     </div>
@@ -352,7 +352,7 @@ export function CommunityChat({ children }: { children: ReactNode }) {
 
           <form
             onSubmit={handleSubmit}
-            className="shrink-0 border-t border-border bg-surface px-4 py-3"
+            className="shrink-0 border-t border-border bg-surface px-2 py-3 md:px-4"
           >
             <div className="flex items-center gap-1.5 rounded-control border border-border bg-background p-1 transition focus-within:border-lime focus-within:ring-2 focus-within:ring-lime/15">
               <label htmlFor="community-chat-message" className="sr-only">
@@ -372,9 +372,9 @@ export function CommunityChat({ children }: { children: ReactNode }) {
                 variant="secondary"
                 icon="arrow-up-right"
                 disabled={!draft.trim()}
-                className="min-h-8 px-2.5"
+                className="min-h-8 px-2 md:px-2.5"
               >
-                Send
+                <span className="hidden md:inline">Send</span>
               </Button>
             </div>
           </form>

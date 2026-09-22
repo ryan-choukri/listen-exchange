@@ -19,7 +19,7 @@ import {
   Icon,
   Modal,
   Notice,
-  TextField,
+  TextareaField,
 } from "@/app/components/ui/design-system";
 import type { SpotifyOEmbedResponse } from "@/app/types/spotify";
 import type { MusicGenre } from "@/app/types/spotify";
@@ -31,6 +31,54 @@ import type {
 
 interface EditableTrack extends MusicBlogTrack {
   dirty: boolean;
+}
+
+const SPOTIFY_TRACK_ID_PATTERN = /^[A-Za-z0-9]{22}$/;
+const SPOTIFY_TRACK_REFERENCE_PATTERN =
+  /(?:open\.spotify\.com\/(?:[^\s"'<>/]+\/)*track\/|spotify:track:)([A-Za-z0-9]{22})(?![A-Za-z0-9])/gi;
+const BULK_IMPORT_DELAY_MS = 1_000;
+
+function extractSpotifyTrackIds(input: string) {
+  const normalizedInput = input.replaceAll("\\/", "/");
+  const trackIds = new Set<string>();
+
+  if (SPOTIFY_TRACK_ID_PATTERN.test(normalizedInput.trim())) {
+    trackIds.add(normalizedInput.trim());
+  }
+
+  for (const match of normalizedInput.matchAll(
+    SPOTIFY_TRACK_REFERENCE_PATTERN,
+  )) {
+    trackIds.add(match[1]);
+  }
+
+  return [...trackIds];
+}
+
+async function fetchSpotifyMetadata(trackId: string) {
+  try {
+    const response = await fetch(
+      `/api/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${trackId}`)}`,
+    );
+    const data = (await response.json()) as SpotifyOEmbedResponse & {
+      error?: string;
+    };
+
+    if (!response.ok || !data.trackId || !data.title || !data.artistName) {
+      return {
+        data: null,
+        error: data.error ?? "Unable to fetch Spotify metadata.",
+      };
+    }
+
+    return { data, error: null };
+  } catch {
+    return { data: null, error: "Unable to contact Spotify." };
+  }
+}
+
+function wait(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function toInput(track: EditableTrack): MusicBlogTrackInput {
@@ -63,10 +111,15 @@ export function AdminMusicBlogManager({
   const [editingGenresId, setEditingGenresId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
   const [status, setStatus] = useState<MusicBlogMutationResponse | null>(null);
   const [, startTransition] = useTransition();
 
   const editingTrack = tracks.find((track) => track.id === editingGenresId);
+  const detectedTrackIds = extractSpotifyTrackIds(spotifyInput);
 
   const patchTrack = (trackId: string, patch: Partial<EditableTrack>) => {
     setTracks((current) =>
@@ -78,33 +131,110 @@ export function AdminMusicBlogManager({
 
   const fetchMetadata = async () => {
     if (!spotifyInput.trim()) return;
+    const trackIds = extractSpotifyTrackIds(spotifyInput);
+
+    if (!trackIds.length) {
+      setStatus({
+        success: false,
+        message: "No valid Spotify track URL was found.",
+      });
+      return;
+    }
+
     setIsFetching(true);
     setStatus(null);
     setMetadata(null);
 
-    try {
-      const response = await fetch(
-        `/api/oembed?url=${encodeURIComponent(spotifyInput.trim())}`,
-      );
-      const data = (await response.json()) as SpotifyOEmbedResponse & {
-        error?: string;
-      };
+    if (trackIds.length === 1) {
+      const result = await fetchSpotifyMetadata(trackIds[0]);
 
-      if (!response.ok || !data.trackId) {
-        setStatus({
-          success: false,
-          message: data.error ?? "Unable to fetch Spotify metadata.",
-        });
-        return;
+      if (!result.data) {
+        setStatus({ success: false, message: result.error });
+      } else {
+        setMetadata(result.data);
+        setNewGenres([]);
       }
 
-      setMetadata(data);
-      setNewGenres([]);
-    } catch {
-      setStatus({ success: false, message: "Unable to contact Spotify." });
-    } finally {
       setIsFetching(false);
+      return;
     }
+
+    setNewGenres([]);
+    const firstDisplayOrder = tracks.length
+      ? Math.max(...tracks.map((track) => track.displayOrder)) + 10
+      : 10;
+    let added = 0;
+    let skipped = 0;
+    let failed = 0;
+    const importedTracks: EditableTrack[] = [];
+
+    for (const [index, trackId] of trackIds.entries()) {
+      setBatchProgress({ current: index + 1, total: trackIds.length });
+
+      try {
+        const metadataResult = await fetchSpotifyMetadata(trackId);
+
+        if (!metadataResult.data) {
+          failed += 1;
+        } else {
+          const result = await addMusicBlogTrack({
+            spotifyTrackId: metadataResult.data.trackId!,
+            title: metadataResult.data.title,
+            artistName: metadataResult.data.artistName!,
+            coverUrl: metadataResult.data.thumbnail_url ?? null,
+            genres: ["Other"],
+            published: publishNewTrack,
+            displayOrder: firstDisplayOrder + index * 10,
+            nbListens: 0,
+            nbLikes: 0,
+          });
+
+          if (result.success) {
+            added += 1;
+            if (result.trackId) {
+              const importedAt = new Date().toISOString();
+              importedTracks.push({
+                id: result.trackId,
+                spotifyTrackId: metadataResult.data.trackId!,
+                title: metadataResult.data.title,
+                artistName: metadataResult.data.artistName!,
+                coverUrl: metadataResult.data.thumbnail_url ?? null,
+                genres: ["Other"],
+                published: publishNewTrack,
+                displayOrder: firstDisplayOrder + index * 10,
+                nbListens: 0,
+                nbLikes: 0,
+                publishedAt: publishNewTrack ? importedAt : null,
+                createdAt: importedAt,
+                canLike: true,
+                dirty: false,
+              });
+            }
+          } else if (result.skipped) {
+            skipped += 1;
+          } else {
+            failed += 1;
+          }
+        }
+      } catch {
+        failed += 1;
+      }
+
+      if (index < trackIds.length - 1) {
+        await wait(BULK_IMPORT_DELAY_MS);
+      }
+    }
+
+    setBatchProgress(null);
+    setIsFetching(false);
+    setSpotifyInput("");
+    if (importedTracks.length) {
+      setTracks((current) => [...current, ...importedTracks]);
+    }
+    setStatus({
+      success: failed === 0,
+      message: `Added ${added}. Skipped ${skipped}. Failed ${failed}.`,
+    });
   };
 
   const addTrack = () => {
@@ -181,27 +311,37 @@ export function AdminMusicBlogManager({
 
   return (
     <div className="space-y-7">
-      <AdminPanel title="Add a Spotify track" icon="spotify">
+      <AdminPanel title="Add Spotify tracks" icon="spotify">
         <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)]">
           <div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="min-w-0 flex-1">
-                <TextField
+                <TextareaField
                   id="music-blog-spotify-track"
-                  label="Spotify ID or URL"
-                  placeholder="https://open.spotify.com/track/..."
+                  label="Spotify track URLs"
+                  placeholder={"https://open.spotify.com/track/...\nhttps://open.spotify.com/track/..."}
+                  helper={
+                    detectedTrackIds.length > 1
+                      ? `${detectedTrackIds.length} unique Spotify tracks detected. Bulk imports use the Other genre.`
+                      : "Paste one URL, multiple lines, CSV, JSON or text containing Spotify track URLs."
+                  }
                   value={spotifyInput}
                   onChange={(event) => setSpotifyInput(event.target.value)}
+                  className="min-h-32"
                 />
               </div>
               <Button
                 type="button"
                 variant="outline"
                 loading={isFetching}
-                disabled={!spotifyInput.trim()}
+                disabled={!spotifyInput.trim() || isFetching}
                 onClick={fetchMetadata}
               >
-                Fetch metadata
+                {batchProgress
+                  ? `Adding ${batchProgress.current} / ${batchProgress.total}...`
+                  : detectedTrackIds.length > 1
+                    ? `Add ${detectedTrackIds.length} tracks`
+                    : "Fetch metadata"}
               </Button>
             </div>
 
